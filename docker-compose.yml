@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    restart: always
+
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=sqlite:///./downloads.db
+    volumes:
+      - ./downloads:/app/downloads
+      - ./downloads.db:/app/downloads.db
+    depends_on:
+      - redis
+    restart: always
+
+  worker:
+    build: .
+    command: celery -A app.worker.celery_app worker --loglevel=info -Q downloads
+    env_file:
+      - .env
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=sqlite:///./downloads.db
+    volumes:
+      - ./downloads:/app/downloads
+      - ./downloads.db:/app/downloads.db
+    depends_on:
+      - redis
+    restart: always
+
+volumes:
+  downloads:
