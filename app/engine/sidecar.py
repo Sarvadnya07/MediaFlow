@@ -129,13 +129,16 @@ class SidecarRunner:
                 })
 
             elif action == "get_capabilities":
+                ffmpeg_caps = ffmpeg_service.get_ffmpeg_capabilities()
                 self.send_response(req_id, status="success", data={
                     "supported_actions": [
                         "initialize", "health_check", "analyze", "get_formats",
-                        "download", "cancel", "convert", "get_capabilities", "shutdown"
+                        "download", "cancel", "queue_add", "queue_list", "queue_cancel",
+                        "queue_retry", "queue_remove", "verify", "convert", "get_capabilities", "shutdown"
                     ],
                     "video_formats": ["mp4", "mkv", "webm"],
-                    "audio_formats": ["mp3", "m4a", "wav", "flac", "ogg", "aac", "opus"]
+                    "audio_formats": ffmpeg_caps.get("supported_audio_formats", ["mp3", "m4a", "wav", "flac", "ogg", "aac", "opus"]),
+                    "ffmpeg": ffmpeg_caps,
                 })
 
             elif action in ("analyze", "get_formats"):

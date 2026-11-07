@@ -8,26 +8,26 @@ MediaDock is a modern, cross-platform desktop media management and download suit
 - **Phase 2: Backend Refactoring & Sidecar Protocol:** COMPLETED (`ccf70e8`)
 - **Phase 3: Desktop Application Foundation & ARCH-01 Audit:** COMPLETED (`1f69676`)
 - **Phase 4: Complete Core Downloader & File Verification:** COMPLETED (`ad9cff4`)
-- **Phase 5: Advanced Download Management & Queue State Machine:** **COMPLETED & VERIFIED**.
-  - **Working Branch:** `feat/phase-5-advanced-queue`
-  - **State Machine & Lifecycle Validation:**
-    - Defined `DownloadState` in `app/engine/queue_models.py`: `queued` → `analyzing` → `downloading` → `processing` → `verifying` → `completed`, plus `paused`, `failed`, and `cancelled`.
-    - Explicit state transition graph rejecting illegal transitions.
-  - **Persistent SQLite Queue Manager:**
-    - Implemented `DownloadQueueManager` in `app/engine/queue_manager.py`.
-    - Stores authoritative queue state in SQLite (`download_queue` table).
-    - Throttles database writes (max 1 write/sec per job) while emitting non-blocking visual progress events to the UI.
-    - Automatic crash & restart recovery: detects jobs left in transient states and resets them to `queued` for resumption.
-  - **Queue Control Operations:**
-    - Supported operations: `queue_add`, `queue_list`, `queue_cancel`, `queue_retry`, and `queue_remove`.
-    - Concurrency quota throttling (`max_concurrent`).
-    - Exposed directly to the frontend via strongly-typed Tauri Rust commands in `src-tauri/src/commands.rs`.
-  - **Desktop UI Integration:**
-    - Updated `frontend/src/App.tsx` with unified queue dashboard, status badges (`downloading`, `queued`, `completed`, `failed`, `cancelled`), retry/remove actions, and dedicated completed history panel.
-  - **Verification:**
-    - `pytest tests/`: **23/23 passing**.
-    - `cargo check`: **0 errors**.
-    - `npm run build`: **0 errors**.
+- **Phase 5: Advanced Download Management & Queue State Machine:** COMPLETED (`d67670f`)
+- **Phase 6: Media Processing & Advanced Options:** **COMPLETED & VERIFIED**.
+  - **Working Branch:** `feat/phase-6-media-processing`
+  - **FFmpeg & FFprobe Capabilities:**
+    - Hierarchical binary resolution (custom setting → `FFMPEG_PATH` env → system PATH).
+    - Version and encoder detection (`get_ffmpeg_capabilities`).
+    - Robust diagnostic error handling (`FFmpegResolutionError`, `FFmpegExecutionError`).
+  - **Audio Extraction & Multi-Format Transcoding:**
+    - Support for `mp3`, `m4a`, `aac`, `flac`, `wav`, `opus`, and `ogg`.
+    - Bitrate selection and encoder parameter binding.
+    - Temporary file isolation with atomic rename and cleanup on failure.
+    - Post-conversion container verification via `verify_media_file` (`ffprobe`).
+  - **Metadata & Subtitles:**
+    - Automatic chapter and metadata preservation (`FFmpegMetadata` postprocessor).
+    - Subtitle conversion and embedding (`FFmpegSubtitlesConvertor` targeting `.srt`).
+  - **Tauri IPC Bridge:**
+    - Added commands `convert_media`, `verify_media`, and enriched `get_capabilities`.
+  - **Automated Verification:**
+    - Added `tests/test_media_processing.py` testing binary discovery, missing binary diagnostics, invalid format rejection, error cleanup, and real WAV->MP3 conversion.
+    - Total test suite: **32/32 tests passing across Rust, Python, and TypeScript**.
 
 ## 3. Mandatory Governance Artifacts
 - [x] `BUILD_STATUS.md` — Active tracker
@@ -37,9 +37,9 @@ MediaDock is a modern, cross-platform desktop media management and download suit
 - [x] `docs/DECISIONS.md` — Architectural Decision Records (ADR-001 through ADR-006)
 - [x] `docs/MIGRATION_PLAN.md` — Phased migration strategy
 - [x] `docs/KNOWN_LIMITATIONS.md` — Platform, DRM, and temporary disk constraints
-- [x] `docs/TEST_REPORT.md` — Automated test report (27 passing tests across all layers)
+- [x] `docs/TEST_REPORT.md` — Automated test report (32 passing tests)
 
 ## 4. Next Phase
-- **Phase 6: Multi-Platform Distribution, Packaging & CI/CD Automation:**
-  - Build and bundle production desktop installer (`.msi` / `.exe` on Windows).
-  - Prepare GitHub Actions CI/CD workflows for cross-platform builds (Windows, macOS, Linux).
+- **Phase 7: Packaging, Release Engineering & Cross-Platform CI/CD:**
+  - Create GitHub Actions multi-platform workflow (`.github/workflows/build.yml`) for Windows, macOS, and Linux.
+  - Final audit and release documentation.

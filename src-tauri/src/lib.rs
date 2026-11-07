@@ -2,8 +2,8 @@ pub mod commands;
 pub mod sidecar;
 
 use commands::{
-    analyze_url, cancel_job, check_health, get_capabilities, queue_add, queue_list, queue_remove,
-    queue_retry, start_download, AppSidecarState,
+    analyze_url, cancel_job, check_health, convert_media, get_capabilities, queue_add, queue_list,
+    queue_remove, queue_retry, start_download, verify_media, AppSidecarState,
 };
 use sidecar::SidecarManager;
 use std::sync::Arc;
@@ -37,7 +37,9 @@ pub fn run() {
             queue_add,
             queue_list,
             queue_retry,
-            queue_remove
+            queue_remove,
+            convert_media,
+            verify_media
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

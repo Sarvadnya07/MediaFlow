@@ -201,6 +201,10 @@ def download_stream(
         "writethumbnail": write_thumbnail,
         "quiet": True,
         "no_warnings": True,
+        # Intermediate file cleanup and metadata embedding
+        "postprocessors": [
+            {"key": "FFmpegMetadata", "add_chapters": True, "add_metadata": True},
+        ],
     }
 
     if ffmpeg_location:
@@ -213,10 +217,10 @@ def download_stream(
             ydl_opts["writeautomaticsub"] = True
         else:
             ydl_opts["subtitleslangs"] = [subtitle_lang]
-        ydl_opts["postprocessors"] = [{
+        ydl_opts["postprocessors"].append({
             "key": "FFmpegSubtitlesConvertor",
             "format": "srt",
-        }]
+        })
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:

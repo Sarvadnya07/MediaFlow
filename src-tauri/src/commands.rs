@@ -165,6 +165,52 @@ pub async fn queue_remove(job_id: String, state: State<'_, AppSidecarState>) -> 
 }
 
 #[tauri::command]
+pub async fn convert_media(
+    input_file: String,
+    output_format: String,
+    bitrate: Option<String>,
+    state: State<'_, AppSidecarState>,
+) -> Result<Value, String> {
+    let mut manager = state.lock().await;
+    let mut payload = serde_json::json!({
+        "input_file": input_file,
+        "output_format": output_format,
+    });
+    if let Some(b) = bitrate {
+        payload["bitrate"] = serde_json::json!(b);
+    }
+
+    match manager.send_request("convert", payload).await {
+        Ok(resp) => {
+            if resp.status == "success" {
+                Ok(resp.data.unwrap_or(serde_json::json!({})))
+            } else {
+                Err(format!("Conversion failed: {:?}", resp.error))
+            }
+        }
+        Err(e) => Err(format!("Conversion communication error: {}", e)),
+    }
+}
+
+#[tauri::command]
+pub async fn verify_media(
+    file_path: String,
+    state: State<'_, AppSidecarState>,
+) -> Result<Value, String> {
+    let mut manager = state.lock().await;
+    match manager.send_request("verify", serde_json::json!({ "file_path": file_path })).await {
+        Ok(resp) => {
+            if resp.status == "success" {
+                Ok(resp.data.unwrap_or(serde_json::json!({})))
+            } else {
+                Err(format!("Verification failed: {:?}", resp.error))
+            }
+        }
+        Err(e) => Err(format!("Verification error: {}", e)),
+    }
+}
+
+#[tauri::command]
 pub async fn cancel_job(job_id: String, state: State<'_, AppSidecarState>) -> Result<Value, String> {
     let mut manager = state.lock().await;
     match manager.send_request("cancel", serde_json::json!({ "job_id": job_id })).await {
