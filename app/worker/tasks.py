@@ -4,7 +4,10 @@ from app.services.yt_service import download_video_file
 from app.services.ai_service import ai_service
 from .celery_app import celery
 from ..logging_config import logger
+from ..config import settings
 import requests
+import redis
+import json
 
 
 @celery.task(bind=True)
@@ -19,34 +22,53 @@ def download_task(self, download_id: int, url: str, quality: str | None):
             logger.warning(f"Download ID {download_id} not found in database")
             return
 
+        redis_client = redis.from_url(settings.REDIS_URL)
+
         download.status = "PROCESSING"
         db.commit()
+        
+        redis_client.publish(
+            f"download_progress:{download_id}",
+            json.dumps({"progress": 0, "status": "PROCESSING"})
+        )
 
         def progress_hook(d):
             if d["status"] == "downloading":
                 p = d.get("_percent_str", "0%").replace("%", "").strip()
                 try:
-                    download.progress = int(float(p))
+                    progress_int = int(float(p))
+                    download.progress = progress_int
                     db.commit()
+                    redis_client.publish(
+                        f"download_progress:{download_id}",
+                        json.dumps({"progress": progress_int, "status": "PROCESSING"})
+                    )
                 except Exception:
                     pass
 
-        title, file_path, thumb_path = download_video_file(url, quality, progress_hooks=[progress_hook])
+        title, file_path, thumb_path, description, duration = download_video_file(url, quality, progress_hooks=[progress_hook])
 
         download.status = "COMPLETED"
         download.progress = 100
         download.title = title
         download.thumbnail_path = thumb_path
+        download.description = description
+        download.duration = duration
+        download.filepath = file_path
         
         # AI-Powered Metadata Generation
         try:
-            download.summary = ai_service.summarize_video(title)
+            download.summary = ai_service.summarize_video(title, description)
             tags = ai_service.generate_tags(title)
             download.tags = ", ".join(tags)
         except Exception as ai_err:
             logger.error(f"AI enrichment failed for {download_id}: {str(ai_err)}")
 
         db.commit()
+        redis_client.publish(
+            f"download_progress:{download_id}",
+            json.dumps({"progress": 100, "status": "COMPLETED"})
+        )
         
         logger.info(f"Task {download_id} COMPLETED: {title}")
         
@@ -58,6 +80,10 @@ def download_task(self, download_id: int, url: str, quality: str | None):
             download.status = "FAILED"
             download.error_message = str(e)
             db.commit()
+            redis_client.publish(
+                f"download_progress:{download_id}",
+                json.dumps({"progress": download.progress, "status": "FAILED", "error": str(e)})
+            )
             notify_webhook(download)
         raise
     finally:

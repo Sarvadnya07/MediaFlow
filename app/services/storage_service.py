@@ -2,8 +2,8 @@ import shutil
 import os
 from abc import ABC, abstractmethod
 from pathlib import Path
-from .logging_config import logger
-from .config import settings
+from ..logging_config import logger
+from ..config import settings
 
 class StorageProvider(ABC):
     @abstractmethod

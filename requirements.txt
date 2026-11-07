@@ -11,3 +11,4 @@ redis>=5.0.8
 yt-dlp>=2024.10.07
 alembic>=1.13.3
 python-dotenv>=1.0.1
+requests>=2.32.0

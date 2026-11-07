@@ -1,5 +1,5 @@
-from .logging_config import logger
-from .config import settings
+from ..logging_config import logger
+from ..config import settings
 
 class AIService:
     def __init__(self):

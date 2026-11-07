@@ -4,19 +4,27 @@ import subprocess
 import shutil
 from .database import engine, Base
 from . import models  # IMPORT models to ensure they are registered with Base
-from .routes import downloads, files, auth_routes
+from .routes import downloads, files, auth_routes, websockets
 from .config import settings
 from .logging_config import logger
 
 logger.info("Starting YT-DLP Backend API startup sequence...")
 
-app = FastAPI(title=settings.PROJECT_NAME, description="A FastAPI backend for downloading and converting video/audio using yt-dlp and ffmpeg.")
+from .rate_limiter import rate_limiter
+from fastapi import Depends
+
+app = FastAPI(
+    title=settings.PROJECT_NAME, 
+    description="A FastAPI backend for downloading and converting video/audio using yt-dlp and ffmpeg.",
+    dependencies=[Depends(rate_limiter)]
+)
 
 # API Versioning: v1
 v1_router = APIRouter(prefix="/v1")
 v1_router.include_router(auth_routes.router)
 v1_router.include_router(downloads.router)
 v1_router.include_router(files.router)
+v1_router.include_router(websockets.router)
 
 app.include_router(v1_router)
 
@@ -35,8 +43,9 @@ def root():
 @app.get("/health", tags=["System"])
 def health_check():
     """Check if critical system dependencies are installed."""
+    import importlib.util
     ffmpeg_installed = shutil.which("ffmpeg") is not None
-    yt_dlp_installed = shutil.which("yt-dlp") is not None
+    yt_dlp_installed = importlib.util.find_spec("yt_dlp") is not None
     
     logger.debug(f"Health check: FFmpeg={ffmpeg_installed}, yt-dlp={yt_dlp_installed}")
     

@@ -28,6 +28,8 @@ class Download(Base):
     status = Column(String, default="pending")
     webhook_url = Column(String, nullable=True)
     summary = Column(String, nullable=True)
+    description = Column(String, nullable=True)
+    duration = Column(Integer, nullable=True)
     tags = Column(String, nullable=True)
     progress = Column(Integer, default=0)
     error_message = Column(String, nullable=True)

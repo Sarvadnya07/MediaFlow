@@ -2,13 +2,13 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 import os
 
-router = APIRouter(prefix="/files", tags=["files"])
+from ..config import settings
 
-DOWNLOAD_DIR = "downloads"
+router = APIRouter(prefix="/files", tags=["files"])
 
 @router.get("/{filename}")
 def get_file(filename: str):
-    filepath = os.path.join(DOWNLOAD_DIR, filename)
+    filepath = os.path.join(str(settings.DOWNLOADS_DIR), filename)
     if not os.path.exists(filepath):
         raise HTTPException(status_code=404, detail="File not found")
     return FileResponse(filepath, filename=filename)

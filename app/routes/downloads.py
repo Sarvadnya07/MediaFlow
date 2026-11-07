@@ -5,7 +5,7 @@ from typing import List
 from ..models import Download
 from ..database import get_db
 from ..auth import get_current_user
-from ..schemas import DownloadRequest, DownloadResponse, ConvertRequest, MetadataRequest
+from ..schemas import DownloadRequest, DownloadResponse, ConvertRequest, MetadataRequest, StartDownloadResponse, ConversionResponse
 from ..services import yt_service, ffmpeg_service
 from ..worker.tasks import download_task
 
@@ -64,6 +64,8 @@ def get_download_status(
         filepath=download.filepath or "",
         thumbnail_path=download.thumbnail_path,
         summary=download.summary,
+        description=download.description,
+        duration=download.duration,
         tags=download.tags,
         status=download.status,
         progress=download.progress,

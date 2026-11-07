@@ -13,6 +13,8 @@ class DownloadResponse(BaseModel):
     filepath: str
     thumbnail_path: Optional[str] = None
     summary: Optional[str] = None
+    description: Optional[str] = None
+    duration: Optional[int] = None
     tags: Optional[str] = None
     status: str
     progress: int
@@ -38,7 +40,13 @@ class ConversionResponse(BaseModel):
 
 class UserCreate(BaseModel):
     username: str
+    email: str
     password: str
+
+class UserRegisterResponse(BaseModel):
+    msg: str
+    username: str
+    email: str
 
 class Token(BaseModel):
     access_token: str

@@ -6,32 +6,30 @@ from datetime import timedelta
 from ..database import get_db
 from ..models import User
 from ..auth import hash_password, verify_password, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
+from ..schemas import Token, UserCreate, UserRegisterResponse
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
-
 
 # -------------------------
 # SIGNUP (register new user)
 # -------------------------
-@router.post("/register")
+@router.post("/register", response_model=UserRegisterResponse)
 def register(
-    username: str = Form(...),
-    email: str = Form(...),
-    password: str = Form(...),
+    req: UserCreate,
     db: Session = Depends(get_db)
 ):
     # Check existing username
-    if db.query(User).filter(User.username == username).first():
+    if db.query(User).filter(User.username == req.username).first():
         raise HTTPException(status_code=400, detail="Username already taken")
 
     # Check existing email
-    if db.query(User).filter(User.email == email).first():
+    if db.query(User).filter(User.email == req.email).first():
         raise HTTPException(status_code=400, detail="Email already registered")
 
     user = User(
-        username=username,
-        email=email,
-        hashed_password=hash_password(password)
+        username=req.username,
+        email=req.email,
+        hashed_password=hash_password(req.password)
     )
     db.add(user)
     db.commit()

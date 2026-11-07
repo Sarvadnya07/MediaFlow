@@ -12,7 +12,7 @@ DOWNLOADS_DIR = str(settings.DOWNLOADS_DIR.absolute())
 
 from typing import List, Callable
 
-def download_video_file(url: str, quality: str | None = None, progress_hooks: List[Callable] = None) -> tuple[str, str, str | None]:
+def download_video_file(url: str, quality: str | None = None, progress_hooks: List[Callable] = None) -> tuple[str, str, str | None, str | None, int | None]:
     format_spec = "bestvideo+bestaudio/best"
     if quality and quality.endswith("p"):
         height = quality[:-1]
@@ -30,6 +30,8 @@ def download_video_file(url: str, quality: str | None = None, progress_hooks: Li
         info = ydl.extract_info(url, download=True)
         title = info.get("title", "unknown")
         filename = ydl.prepare_filename(info)
+        description = info.get("description", "")
+        duration = int(info.get("duration", 0)) if info.get("duration") else None
         
         # Get thumbnail path
         thumbnail = None
@@ -50,18 +52,20 @@ def download_video_file(url: str, quality: str | None = None, progress_hooks: Li
                 filename = candidate
                 break
 
-    return title, filename, thumbnail
+    return title, filename, thumbnail, description, duration
 
 
 def download_video(url: str, quality: str, db: Session, user_id: int):
     try:
-        title, filename, thumbnail = download_video_file(url, quality)
+        title, filename, thumbnail, description, duration = download_video_file(url, quality)
 
         download_entry = Download(
             url=url,
             title=title,
             filepath=filename,
             thumbnail_path=thumbnail,
+            description=description,
+            duration=duration,
             status="success",
             progress=100,
             created_at=datetime.utcnow(),
@@ -114,6 +118,8 @@ def get_downloads(db_session: Session, user: User) -> list[DownloadResponse]:
             filepath=e.filepath or "",
             thumbnail_path=e.thumbnail_path,
             summary=e.summary,
+            description=e.description,
+            duration=e.duration,
             tags=e.tags,
             status=e.status,
             progress=e.progress,
