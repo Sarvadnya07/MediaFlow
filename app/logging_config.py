@@ -29,8 +29,8 @@ def setup_logging():
     # JSON Formatter
     formatter = JsonFormatter()
     
-    # Console Handler
-    console_handler = logging.StreamHandler(sys.stdout)
+    # Console Handler routed strictly to sys.stderr so stdout is reserved for IPC
+    console_handler = logging.StreamHandler(sys.stderr)
     console_handler.setFormatter(formatter)
     root_logger.addHandler(console_handler)
     
