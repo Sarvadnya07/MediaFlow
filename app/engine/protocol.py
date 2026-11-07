@@ -12,6 +12,7 @@ class IPCRequest(BaseModel):
         "get_formats",
         "download",
         "cancel",
+        "verify",
         "convert",
         "get_capabilities",
         "shutdown",

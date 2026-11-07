@@ -196,6 +196,15 @@ class SidecarRunner:
                     self.active_jobs[job_id] = t
                 t.start()
 
+            elif action == "verify":
+                file_path = payload.get("file_path")
+                if not file_path:
+                    self.send_response(req_id, status="error", error={"code": "MISSING_ARGUMENT", "message": "Missing 'file_path'."})
+                    return
+
+                res = ffmpeg_service.verify_media_file(file_path)
+                self.send_response(req_id, status="success", data=res)
+
             elif action == "convert":
                 input_file = payload.get("input_file")
                 output_format = payload.get("output_format", "mp3")

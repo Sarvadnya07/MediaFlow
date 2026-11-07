@@ -152,43 +152,47 @@ def reencode_video(
     return output_file
 
 
-def embed_metadata(
-    input_file: str,
-    title: str | None = None,
-    artist: str | None = None,
-    thumbnail: str | None = None,
-    ffmpeg_bin: str | None = None
-) -> str:
+def verify_media_file(file_path: str, ffprobe_bin: str | None = None) -> dict:
     """
-    Embed title, artist, and optional thumbnail cover art cleanly.
+    Validate that a media file exists, has non-zero size, and is a valid media container using ffprobe.
     """
-    input_path = Path(input_file).resolve()
-    if not input_path.exists():
-        raise FileNotFoundError(f"Input file '{input_file}' not found.")
+    path = Path(file_path).resolve()
+    if not path.is_file():
+        raise FileNotFoundError(f"Media file '{file_path}' does not exist.")
 
-    bin_path = resolve_ffmpeg_path(ffmpeg_bin)
-    output_file = str(input_path.parent / f"{input_path.stem}_meta{input_path.suffix}")
+    file_size = path.stat().st_size
+    if file_size == 0:
+        raise ValueError(f"Media file '{file_path}' is empty (0 bytes).")
 
-    cmd = [bin_path, "-i", str(input_path), "-y"]
+    probe_bin = resolve_ffprobe_path(ffprobe_bin)
+    cmd = [
+        probe_bin,
+        "-v", "error",
+        "-show_entries", "format=format_name,duration,size,bit_rate:stream=codec_type,codec_name,width,height",
+        "-of", "json",
+        str(path)
+    ]
 
-    if title:
-        cmd += ["-metadata", f"title={title}"]
-    if artist:
-        cmd += ["-metadata", f"artist={artist}"]
-
-    if thumbnail:
-        thumb_path = Path(thumbnail).resolve()
-        if thumb_path.exists():
-            cmd += ["-i", str(thumb_path), "-map", "0", "-map", "1", "-c", "copy", "-disposition:v:1", "attached_pic"]
-
-    cmd.append(output_file)
-
-    logger.info(f"Embedding metadata into {input_path.name}")
     try:
-        subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
-    except subprocess.CalledProcessError as exc:
-        err_msg = exc.stderr.strip() if exc.stderr else str(exc)
-        logger.error(f"FFmpeg metadata embed failed: {err_msg}")
-        raise FFmpegExecutionError(f"FFmpeg metadata embed failed: {err_msg}")
+        res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
+        import json
+        probe_data = json.loads(res.stdout)
+        format_info = probe_data.get("format", {})
+        streams = probe_data.get("streams", [])
 
-    return output_file
+        has_video = any(s.get("codec_type") == "video" for s in streams)
+        has_audio = any(s.get("codec_type") == "audio" for s in streams)
+
+        return {
+            "valid": True,
+            "filepath": str(path),
+            "filesize": file_size,
+            "format_name": format_info.get("format_name"),
+            "duration": float(format_info.get("duration", 0.0)) if format_info.get("duration") else None,
+            "has_video": has_video,
+            "has_audio": has_audio,
+            "streams_count": len(streams),
+        }
+    except Exception as exc:
+        logger.error(f"Media container validation failed for {file_path}: {str(exc)}")
+        raise FFmpegExecutionError(f"Container validation failed: {str(exc)}")

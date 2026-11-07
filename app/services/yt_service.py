@@ -244,14 +244,28 @@ def download_stream(
                     thumbnail = candidate
                     break
 
+            # Verify file exists and has non-zero bytes
+            if not os.path.exists(filename) or os.path.getsize(filename) == 0:
+                raise RuntimeError(f"Download output file '{filename}' was not created or is empty.")
+
+            # Run FFprobe validation if available
+            verification_data = None
+            try:
+                from .ffmpeg_service import verify_media_file
+                verification_data = verify_media_file(filename)
+            except Exception as v_err:
+                logger.warning(f"FFprobe verification skipped/failed: {v_err}")
+
             return {
                 "job_id": job_id,
                 "title": title,
                 "filepath": filename,
+                "filesize": os.path.getsize(filename),
                 "thumbnail_path": thumbnail,
                 "description": description,
                 "duration": duration,
                 "status": "completed",
+                "verification": verification_data,
             }
     except DownloadCancelledError:
         logger.info(f"Download stream cancelled for job {job_id}")

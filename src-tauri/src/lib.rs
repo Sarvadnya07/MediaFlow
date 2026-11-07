@@ -1,7 +1,7 @@
 pub mod commands;
 pub mod sidecar;
 
-use commands::{analyze_url, cancel_job, check_health, get_capabilities, AppSidecarState};
+use commands::{analyze_url, cancel_job, check_health, get_capabilities, start_download, AppSidecarState};
 use sidecar::SidecarManager;
 use std::sync::Arc;
 use tauri::Manager;
@@ -29,6 +29,7 @@ pub fn run() {
             check_health,
             get_capabilities,
             analyze_url,
+            start_download,
             cancel_job
         ])
         .run(tauri::generate_context!())
