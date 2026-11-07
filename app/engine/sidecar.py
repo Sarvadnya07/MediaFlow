@@ -12,6 +12,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from app.engine.protocol import IPCRequest, IPCResponse, ProgressEvent
+from app.engine.queue_manager import DownloadQueueManager
 from app.services import yt_service, ffmpeg_service
 from app.services.yt_service import DownloadCancelledError
 from app.security import SecurityError
@@ -27,6 +28,12 @@ class SidecarRunner:
         self._stdout_lock = threading.Lock()
         self.active_jobs: Dict[str, threading.Thread] = {}
         self.jobs_lock = threading.Lock()
+
+        # Integrated persistent queue manager
+        def on_queue_event(evt):
+            self.send_event(evt.get("data", {}).get("job_id", "queue"), evt.get("event", "queue"), evt.get("data", {}))
+
+        self.queue_mgr = DownloadQueueManager(event_callback=on_queue_event)
 
     def send_line(self, obj: Dict[str, Any]):
         """Safely write single JSON line followed by newline and flush immediately."""
@@ -102,6 +109,7 @@ class SidecarRunner:
 
             elif action == "shutdown":
                 self.running = False
+                self.queue_mgr.shutdown()
                 self.send_response(req_id, status="success", data={"message": "Shutting down."})
 
             elif action == "health_check":
@@ -195,6 +203,43 @@ class SidecarRunner:
                 with self.jobs_lock:
                     self.active_jobs[job_id] = t
                 t.start()
+
+            elif action == "queue_add":
+                url = payload.get("url")
+                if not url:
+                    self.send_response(req_id, status="error", error={"code": "MISSING_ARGUMENT", "message": "Missing 'url'."})
+                    return
+
+                item = self.queue_mgr.add_job(
+                    url=url,
+                    title=payload.get("title"),
+                    format_id=payload.get("format_id"),
+                    quality=payload.get("quality"),
+                    subtitle_lang=payload.get("subtitle_lang"),
+                    output_dir=payload.get("output_dir"),
+                    playlist_id=payload.get("playlist_id"),
+                    playlist_index=payload.get("playlist_index"),
+                )
+                self.send_response(req_id, status="success", data=item.model_dump())
+
+            elif action == "queue_list":
+                jobs = self.queue_mgr.get_all_jobs()
+                self.send_response(req_id, status="success", data={"jobs": [j.model_dump() for j in jobs]})
+
+            elif action == "queue_cancel":
+                job_id = payload.get("job_id")
+                cancelled = self.queue_mgr.cancel_job(job_id)
+                self.send_response(req_id, status="success", data={"job_id": job_id, "cancelled": cancelled})
+
+            elif action == "queue_retry":
+                job_id = payload.get("job_id")
+                retried = self.queue_mgr.retry_job(job_id)
+                self.send_response(req_id, status="success", data={"job_id": job_id, "retried": retried})
+
+            elif action == "queue_remove":
+                job_id = payload.get("job_id")
+                removed = self.queue_mgr.remove_job(job_id)
+                self.send_response(req_id, status="success", data={"job_id": job_id, "removed": removed})
 
             elif action == "verify":
                 file_path = payload.get("file_path")

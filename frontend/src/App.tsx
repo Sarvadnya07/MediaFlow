@@ -18,7 +18,9 @@ import {
   Play,
   Film,
   Music,
-  Check
+  Check,
+  RotateCcw,
+  Trash2
 } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
@@ -62,20 +64,23 @@ interface AnalysisData {
   subtitles: string[];
   automatic_captions: string[];
   is_playlist?: boolean;
+  playlist_count?: number;
 }
 
-interface DownloadTask {
+interface QueueItem {
   id: string;
   url: string;
   title: string;
-  status: 'pending' | 'downloading' | 'processing' | 'completed' | 'cancelled' | 'failed';
+  state: 'queued' | 'analyzing' | 'downloading' | 'processing' | 'verifying' | 'completed' | 'paused' | 'failed' | 'cancelled';
   percent: number;
-  downloadedBytes: number;
-  totalBytes: number;
+  downloaded_bytes: number;
+  total_bytes: number;
   speed: number;
   eta: number;
   filepath?: string;
-  error?: string;
+  error_message?: string;
+  retry_count: number;
+  created_at: number;
 }
 
 export function App() {
@@ -92,35 +97,40 @@ export function App() {
   const [mediaType, setMediaType] = useState<'video' | 'audio'>('video');
   const [selectedFormatId, setSelectedFormatId] = useState<string>('');
   const [selectedSubtitle, setSelectedSubtitle] = useState<string>('none');
-  const [activeTasks, setActiveTasks] = useState<DownloadTask[]>([]);
+  const [queueItems, setQueueItems] = useState<QueueItem[]>([]);
 
   useEffect(() => {
     checkSystemHealth();
+    fetchQueueItems();
 
-    // Listen to real-time streaming progress events from Rust/Python sidecar
+    // Listen to real-time streaming progress and state change events from Rust/Python sidecar
     const unlistenPromise = listen('sidecar-event', (event: any) => {
       const payload = event.payload;
-      if (payload && payload.data) {
-        const jobId = payload.id;
-        const progressData = payload.data;
+      if (!payload) return;
 
-        setActiveTasks((prev) =>
-          prev.map((t) => {
-            if (t.id === jobId) {
+      const eventName = payload.event;
+      const data = payload.data || {};
+      const jobId = data.job_id || payload.id;
+
+      if (eventName === 'progress') {
+        setQueueItems((prev) =>
+          prev.map((item) => {
+            if (item.id === jobId) {
               return {
-                ...t,
-                status: progressData.status || t.status,
-                percent: progressData.percent ?? t.percent,
-                downloadedBytes: progressData.downloaded_bytes ?? t.downloadedBytes,
-                totalBytes: progressData.total_bytes ?? t.totalBytes,
-                speed: progressData.speed ?? t.speed,
-                eta: progressData.eta ?? t.eta,
-                filepath: progressData.filename ?? t.filepath,
+                ...item,
+                percent: data.percent ?? item.percent,
+                downloaded_bytes: data.downloaded_bytes ?? item.downloaded_bytes,
+                total_bytes: data.total_bytes ?? item.total_bytes,
+                speed: data.speed ?? item.speed,
+                eta: data.eta ?? item.eta,
+                filepath: data.filename ?? item.filepath,
               };
             }
-            return t;
+            return item;
           })
         );
+      } else if (eventName === 'job_state_changed' || eventName === 'job_completed' || eventName === 'job_failed') {
+        fetchQueueItems();
       }
     });
 
@@ -134,10 +144,22 @@ export function App() {
       const res = await invoke<HealthStatus>('check_health');
       setHealth(res);
     } catch (e: any) {
+      console.error('Health check failed:', e);
       setHealth({
         status: 'degraded',
         dependencies: { ffmpeg: false, yt_dlp: true },
       });
+    }
+  };
+
+  const fetchQueueItems = async () => {
+    try {
+      const res: any = await invoke('queue_list');
+      if (res && res.jobs) {
+        setQueueItems(res.jobs);
+      }
+    } catch (e) {
+      console.error('Failed to fetch queue list:', e);
     }
   };
 
@@ -163,13 +185,10 @@ export function App() {
       const res = await invoke<AnalysisData>('analyze_url', { url: targetUrl });
       setAnalysisResult(res);
 
-      // Default format selection
       if (res.formats && res.formats.length > 0) {
-        // Pick best video or first format
         setSelectedFormatId(res.formats[0].format_id);
       }
 
-      // Add to recent URLs
       setRecentUrls((prev) => Array.from(new Set([targetUrl, ...prev])).slice(0, 5));
     } catch (err: any) {
       setAnalysisError(err?.toString() || 'Failed to analyze URL');
@@ -178,64 +197,57 @@ export function App() {
     }
   };
 
-  const handleStartDownload = async () => {
+  const handleAddToQueue = async () => {
     if (!analysisResult) return;
 
-    const taskId = 'job-' + Math.random().toString(36).substring(2, 9);
-    const newTask: DownloadTask = {
-      id: taskId,
-      url: analysisResult.url,
-      title: analysisResult.title,
-      status: 'downloading',
-      percent: 0,
-      downloadedBytes: 0,
-      totalBytes: 0,
-      speed: 0,
-      eta: 0,
-    };
-
-    setActiveTasks((prev) => [newTask, ...prev]);
-    setActiveTab('queue');
-
     try {
-      const res = await invoke<any>('start_download', {
+      await invoke('queue_add', {
         url: analysisResult.url,
+        title: analysisResult.title,
         formatId: selectedFormatId || undefined,
         subtitleLang: selectedSubtitle !== 'none' ? selectedSubtitle : undefined,
       });
 
-      setActiveTasks((prev) =>
-        prev.map((t) =>
-          t.id === taskId
-            ? { ...t, status: 'completed', percent: 100, filepath: res.filepath }
-            : t
-        )
-      );
-    } catch (err: any) {
-      setActiveTasks((prev) =>
-        prev.map((t) =>
-          t.id === taskId
-            ? { ...t, status: 'failed', error: err?.toString() || 'Download error' }
-            : t
-        )
-      );
+      await fetchQueueItems();
+      setActiveTab('queue');
+    } catch (err) {
+      console.error('Add to queue error:', err);
     }
   };
 
-  const handleCancelTask = async (taskId: string) => {
+  const handleCancelJob = async (jobId: string) => {
     try {
-      await invoke('cancel_job', { jobId: taskId });
-      setActiveTasks((prev) =>
-        prev.map((t) => (t.id === taskId ? { ...t, status: 'cancelled' } : t))
-      );
+      await invoke('cancel_job', { jobId });
+      await fetchQueueItems();
     } catch (err) {
-      console.error('Cancel task error:', err);
+      console.error('Cancel job error:', err);
+    }
+  };
+
+  const handleRetryJob = async (jobId: string) => {
+    try {
+      await invoke('queue_retry', { jobId });
+      await fetchQueueItems();
+    } catch (err) {
+      console.error('Retry job error:', err);
+    }
+  };
+
+  const handleRemoveJob = async (jobId: string) => {
+    try {
+      await invoke('queue_remove', { jobId });
+      await fetchQueueItems();
+    } catch (err) {
+      console.error('Remove job error:', err);
     }
   };
 
   // Filter video vs audio formats
   const availableVideoFormats = analysisResult?.formats?.filter((f) => f.has_video) || [];
   const availableAudioFormats = analysisResult?.formats?.filter((f) => f.has_audio && !f.has_video) || [];
+
+  // Completed items count for History
+  const completedJobs = queueItems.filter((j) => j.state === 'completed');
 
   return (
     <div className={`flex h-screen w-screen overflow-hidden ${darkMode ? 'bg-zinc-950 text-zinc-100' : 'bg-zinc-50 text-zinc-900'}`}>
@@ -279,23 +291,30 @@ export function App() {
                 <ListOrdered className="w-4 h-4" />
                 <span>Download Queue</span>
               </div>
-              {activeTasks.length > 0 && (
+              {queueItems.length > 0 && (
                 <span className="px-2 py-0.5 text-xs rounded-full bg-indigo-500/30 text-indigo-200">
-                  {activeTasks.length}
+                  {queueItems.length}
                 </span>
               )}
             </button>
 
             <button
               onClick={() => setActiveTab('history')}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition ${
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition ${
                 activeTab === 'history'
                   ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
                   : 'hover:bg-zinc-800/40 text-zinc-400 hover:text-zinc-200'
               }`}
             >
-              <History className="w-4 h-4" />
-              <span>History</span>
+              <div className="flex items-center gap-3">
+                <History className="w-4 h-4" />
+                <span>History</span>
+              </div>
+              {completedJobs.length > 0 && (
+                <span className="px-2 py-0.5 text-xs rounded-full bg-emerald-500/20 text-emerald-300">
+                  {completedJobs.length}
+                </span>
+              )}
             </button>
 
             <button
@@ -363,11 +382,11 @@ export function App() {
           </div>
           <div className="flex items-center gap-3">
             <button
-              onClick={checkSystemHealth}
+              onClick={() => { checkSystemHealth(); fetchQueueItems(); }}
               className="px-3 py-1.5 text-xs font-medium rounded-lg border border-zinc-700/60 hover:bg-zinc-800 flex items-center gap-1.5 transition text-zinc-300"
             >
               <RefreshCw className="w-3 h-3" />
-              Refresh Engine
+              Refresh
             </button>
           </div>
         </header>
@@ -380,7 +399,7 @@ export function App() {
               <div className={`p-6 rounded-2xl border ${darkMode ? 'bg-zinc-900/40 border-zinc-800' : 'bg-white border-zinc-200 shadow-sm'}`}>
                 <h3 className="text-lg font-medium mb-1">Analyze & Download Media</h3>
                 <p className="text-sm text-zinc-500 mb-4">
-                  Enter an authorized video, audio, or streaming URL to discover formats and download.
+                  Enter an authorized video, playlist, or streaming URL to discover formats and queue downloads.
                 </p>
 
                 <form onSubmit={handleAnalyze} className="flex gap-2">
@@ -430,7 +449,6 @@ export function App() {
                   </button>
                 </form>
 
-                {/* Recent URLs Chips */}
                 {recentUrls.length > 0 && (
                   <div className="mt-3 flex items-center gap-2 flex-wrap">
                     <span className="text-xs text-zinc-500 font-medium">Recent:</span>
@@ -438,9 +456,7 @@ export function App() {
                       <button
                         key={i}
                         type="button"
-                        onClick={() => {
-                          setUrlInput(rUrl);
-                        }}
+                        onClick={() => { setUrlInput(rUrl); }}
                         className="px-2.5 py-1 rounded-lg bg-zinc-800/60 hover:bg-zinc-800 text-xs text-zinc-400 hover:text-zinc-200 max-w-xs truncate transition"
                       >
                         {rUrl}
@@ -460,7 +476,7 @@ export function App() {
               {/* Analysis & Format Selection Workspace */}
               {analysisResult && (
                 <div className={`p-6 rounded-2xl border space-y-6 ${darkMode ? 'bg-zinc-900/40 border-zinc-800' : 'bg-white border-zinc-200 shadow-sm'}`}>
-                  {/* Media Header Info */}
+                  {/* Playlist Badge or Single Media Header Info */}
                   <div className="flex gap-6 items-start">
                     {analysisResult.thumbnail && (
                       <img 
@@ -470,7 +486,15 @@ export function App() {
                       />
                     )}
                     <div className="space-y-2 flex-1">
-                      <h4 className="font-bold text-lg leading-snug">{analysisResult.title}</h4>
+                      <div className="flex items-center gap-2">
+                        {analysisResult.is_playlist && (
+                          <span className="px-2 py-0.5 rounded text-xs font-semibold bg-indigo-500/20 text-indigo-300">
+                            Playlist ({analysisResult.playlist_count} items)
+                          </span>
+                        )}
+                        <h4 className="font-bold text-lg leading-snug">{analysisResult.title}</h4>
+                      </div>
+
                       <p className="text-xs text-zinc-400">
                         Channel/Creator: <span className="text-zinc-200">{analysisResult.uploader || 'Unknown'}</span> &bull; Extractor: <span className="text-zinc-200">{analysisResult.extractor}</span> &bull; Duration: <span className="text-zinc-200">{analysisResult.duration ? `${Math.floor(analysisResult.duration / 60)}m ${analysisResult.duration % 60}s` : 'Unknown'}</span>
                       </p>
@@ -507,7 +531,7 @@ export function App() {
                       </div>
 
                       {/* Subtitle Selector */}
-                      {(analysisResult.subtitles.length > 0 || analysisResult.automatic_captions.length > 0) && (
+                      {(analysisResult.subtitles?.length > 0 || analysisResult.automatic_captions?.length > 0) && (
                         <div className="flex items-center gap-2 text-xs">
                           <label className="text-zinc-400">Subtitles:</label>
                           <select
@@ -561,27 +585,26 @@ export function App() {
                       })}
                     </div>
 
-                    {/* Action Download Button */}
+                    {/* Action Add to Queue Button */}
                     <div className="pt-4 flex justify-end">
                       <button
                         type="button"
-                        onClick={handleStartDownload}
+                        onClick={handleAddToQueue}
                         className="px-8 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm transition shadow-lg shadow-indigo-600/30 flex items-center gap-2"
                       >
                         <Play className="w-4 h-4 fill-current" />
-                        <span>Download Selected Media</span>
+                        <span>Add to Download Queue</span>
                       </button>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* Empty state when no analysis */}
               {!analysisResult && !analyzing && (
                 <div className={`p-12 text-center rounded-2xl border border-dashed ${darkMode ? 'border-zinc-800/80 text-zinc-600' : 'border-zinc-200 text-zinc-400'}`}>
                   <DownloadCloud className="w-12 h-12 mx-auto mb-3 opacity-40" />
                   <p className="text-sm font-medium">Ready to download media</p>
-                  <p className="text-xs text-zinc-500 mt-1">Enter a video link above to inspect formats, resolutions, and subtitles.</p>
+                  <p className="text-xs text-zinc-500 mt-1">Enter a video or playlist link above to inspect formats, resolutions, and subtitles.</p>
                 </div>
               )}
             </div>
@@ -590,46 +613,75 @@ export function App() {
           {activeTab === 'queue' && (
             <div className="space-y-4">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-base font-semibold">Active Downloads ({activeTasks.length})</h3>
+                <h3 className="text-base font-semibold">Active & Queued Tasks ({queueItems.length})</h3>
+                <button
+                  type="button"
+                  onClick={fetchQueueItems}
+                  className="px-3 py-1 rounded-lg border border-zinc-700/60 hover:bg-zinc-800 text-xs font-medium text-zinc-300 flex items-center gap-1.5"
+                >
+                  <RefreshCw className="w-3 h-3" />
+                  Refresh Queue
+                </button>
               </div>
 
-              {activeTasks.length === 0 ? (
+              {queueItems.length === 0 ? (
                 <div className={`p-12 text-center rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800' : 'bg-white border-zinc-200'}`}>
                   <ListOrdered className="w-10 h-10 mx-auto mb-3 text-zinc-600" />
                   <h4 className="font-medium text-sm">Download Queue Empty</h4>
-                  <p className="text-xs text-zinc-500 mt-1">Active tasks and non-blocking downloads will appear here.</p>
+                  <p className="text-xs text-zinc-500 mt-1">Add items from the Downloader to track active and queued tasks.</p>
                 </div>
               ) : (
-                activeTasks.map((task) => (
+                queueItems.map((item) => (
                   <div
-                    key={task.id}
+                    key={item.id}
                     className={`p-5 rounded-2xl border space-y-3 ${darkMode ? 'bg-zinc-900/40 border-zinc-800' : 'bg-white border-zinc-200 shadow-sm'}`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
-                        <h4 className="font-semibold text-sm line-clamp-1">{task.title}</h4>
-                        <p className="text-xs text-zinc-400 truncate max-w-lg">{task.url}</p>
+                        <h4 className="font-semibold text-sm line-clamp-1">{item.title}</h4>
+                        <p className="text-xs text-zinc-400 truncate max-w-lg">{item.url}</p>
                       </div>
 
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
                         <span className={`px-2.5 py-1 rounded-md text-xs font-medium uppercase ${
-                          task.status === 'completed' ? 'bg-emerald-500/20 text-emerald-400' :
-                          task.status === 'failed' ? 'bg-rose-500/20 text-rose-400' :
-                          task.status === 'cancelled' ? 'bg-zinc-800 text-zinc-400' :
-                          'bg-indigo-500/20 text-indigo-400 animate-pulse'
+                          item.state === 'completed' ? 'bg-emerald-500/20 text-emerald-400' :
+                          item.state === 'failed' ? 'bg-rose-500/20 text-rose-400' :
+                          item.state === 'cancelled' ? 'bg-zinc-800 text-zinc-400' :
+                          item.state === 'downloading' ? 'bg-indigo-500/20 text-indigo-400 animate-pulse' :
+                          'bg-amber-500/20 text-amber-400'
                         }`}>
-                          {task.status}
+                          {item.state}
                         </span>
 
-                        {task.status === 'downloading' && (
+                        {item.state === 'downloading' && (
                           <button
                             type="button"
-                            onClick={() => handleCancelTask(task.id)}
-                            className="px-3 py-1 rounded-lg border border-rose-500/30 hover:bg-rose-500/10 text-rose-400 text-xs font-medium transition"
+                            onClick={() => handleCancelJob(item.id)}
+                            className="px-2.5 py-1 rounded-lg border border-rose-500/30 hover:bg-rose-500/10 text-rose-400 text-xs font-medium transition"
                           >
                             Cancel
                           </button>
                         )}
+
+                        {(item.state === 'failed' || item.state === 'cancelled') && (
+                          <button
+                            type="button"
+                            onClick={() => handleRetryJob(item.id)}
+                            className="p-1.5 rounded-lg border border-zinc-700 hover:bg-zinc-800 text-zinc-300 transition"
+                            title="Retry download"
+                          >
+                            <RotateCcw className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveJob(item.id)}
+                          className="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-rose-400 transition"
+                          title="Remove from queue"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     </div>
 
@@ -637,20 +689,20 @@ export function App() {
                     <div className="w-full bg-zinc-800/80 rounded-full h-2 overflow-hidden">
                       <div
                         className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${task.percent}%` }}
+                        style={{ width: `${item.percent}%` }}
                       />
                     </div>
 
                     {/* Progress Stats */}
                     <div className="flex items-center justify-between text-xs text-zinc-400">
-                      <span>{task.percent.toFixed(1)}%</span>
-                      {task.speed > 0 && <span>{(task.speed / (1024 * 1024)).toFixed(2)} MB/s</span>}
-                      {task.eta > 0 && <span>ETA: {task.eta}s</span>}
-                      {task.filepath && <span className="text-zinc-500 truncate max-w-xs">{task.filepath}</span>}
+                      <span>{item.percent.toFixed(1)}%</span>
+                      {item.speed > 0 && <span>{(item.speed / (1024 * 1024)).toFixed(2)} MB/s</span>}
+                      {item.eta > 0 && <span>ETA: {item.eta}s</span>}
+                      {item.filepath && <span className="text-zinc-500 truncate max-w-xs">{item.filepath}</span>}
                     </div>
 
-                    {task.error && (
-                      <p className="text-xs text-rose-400">{task.error}</p>
+                    {item.error_message && (
+                      <p className="text-xs text-rose-400">{item.error_message}</p>
                     )}
                   </div>
                 ))
@@ -659,10 +711,37 @@ export function App() {
           )}
 
           {activeTab === 'history' && (
-            <div className={`p-12 text-center rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800' : 'bg-white border-zinc-200'}`}>
-              <History className="w-10 h-10 mx-auto mb-3 text-zinc-600" />
-              <h4 className="font-medium text-sm">No Download History Yet</h4>
-              <p className="text-xs text-zinc-500 mt-1">Downloaded videos and converted tracks are stored in SQLite.</p>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-base font-semibold">Completed Downloads ({completedJobs.length})</h3>
+              </div>
+
+              {completedJobs.length === 0 ? (
+                <div className={`p-12 text-center rounded-2xl border ${darkMode ? 'bg-zinc-900/30 border-zinc-800' : 'bg-white border-zinc-200'}`}>
+                  <History className="w-10 h-10 mx-auto mb-3 text-zinc-600" />
+                  <h4 className="font-medium text-sm">No Download History Yet</h4>
+                  <p className="text-xs text-zinc-500 mt-1">Completed media downloads will appear here with location info.</p>
+                </div>
+              ) : (
+                completedJobs.map((job) => (
+                  <div
+                    key={job.id}
+                    className={`p-4 rounded-2xl border flex items-center justify-between ${darkMode ? 'bg-zinc-900/30 border-zinc-800' : 'bg-white border-zinc-200 shadow-sm'}`}
+                  >
+                    <div className="space-y-1 max-w-lg">
+                      <h4 className="font-semibold text-sm line-clamp-1">{job.title}</h4>
+                      <p className="text-xs text-zinc-400 truncate">{job.filepath || job.url}</p>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs text-emerald-400 font-medium flex items-center gap-1">
+                        <Check className="w-3.5 h-3.5" />
+                        Completed
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           )}
 
@@ -709,11 +788,12 @@ export function App() {
               <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-zinc-900/40 border-zinc-800' : 'bg-white border-zinc-200'}`}>
                 <div className="flex items-center gap-2 mb-3 text-indigo-400">
                   <HardDrive className="w-5 h-5" />
-                  <h4 className="font-medium text-sm">Persistence & Cache</h4>
+                  <h4 className="font-medium text-sm">Persistence & Queue</h4>
                 </div>
                 <div className="space-y-1.5 text-xs text-zinc-400">
                   <p>Database: <span className="text-zinc-200">SQLite (WAL mode enabled)</span></p>
-                  <p>Active Tasks: <span className="text-zinc-200">{activeTasks.length}</span></p>
+                  <p>Queued / Active Tasks: <span className="text-zinc-200">{queueItems.length}</span></p>
+                  <p>Completed History: <span className="text-emerald-400">{completedJobs.length}</span></p>
                 </div>
               </div>
             </div>
