@@ -87,7 +87,7 @@ impl SidecarManager {
         eprintln!("[Rust Sidecar] Spawning Python worker: {}", resolved_python);
 
         let mut process = Command::new(resolved_python)
-            .args(&["-m", "app.engine.sidecar"])
+            .args(["-m", "app.engine.sidecar"])
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::inherit())
@@ -115,11 +115,15 @@ impl SidecarManager {
 
                         // Parse as generic JSON object first
                         if let Ok(val) = serde_json::from_str::<Value>(trimmed) {
-                            let msg_type = val.get("type").and_then(|v| v.as_str()).unwrap_or("response");
+                            let msg_type = val
+                                .get("type")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("response");
 
                             if msg_type == "event" {
                                 // Forward progress event to frontend via Tauri Event Bus
-                                if let Ok(event_obj) = serde_json::from_value::<ProgressEvent>(val) {
+                                if let Ok(event_obj) = serde_json::from_value::<ProgressEvent>(val)
+                                {
                                     let _ = app_handle_clone.emit("sidecar-event", &event_obj);
                                 }
                             } else {
