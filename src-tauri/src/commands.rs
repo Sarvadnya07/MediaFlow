@@ -289,6 +289,30 @@ pub async fn reveal_file(path: String) -> Result<(), String> {
 }
 
 #[tauri::command]
+pub async fn get_diagnostics(
+    recent_errors_limit: Option<usize>,
+    state: State<'_, AppSidecarState>,
+) -> Result<Value, String> {
+    let mut manager = state.lock().await;
+    match manager
+        .send_request(
+            "get_diagnostics",
+            serde_json::json!({ "recent_errors_limit": recent_errors_limit.unwrap_or(20) }),
+        )
+        .await
+    {
+        Ok(resp) => {
+            if resp.status == "success" {
+                Ok(resp.data.unwrap_or(serde_json::json!({})))
+            } else {
+                Err(format!("Error: {:?}", resp.error))
+            }
+        }
+        Err(e) => Err(format!("Sidecar communication error: {}", e)),
+    }
+}
+
+#[tauri::command]
 pub async fn cancel_job(
     job_id: String,
     state: State<'_, AppSidecarState>,

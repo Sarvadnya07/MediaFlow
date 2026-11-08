@@ -14,6 +14,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from app.engine.protocol import IPCRequest, IPCResponse, ProgressEvent
 from app.engine.queue_manager import DownloadQueueManager
 from app.services import yt_service, ffmpeg_service
+from app.services.diagnostics_service import DiagnosticsService
 from app.services.yt_service import DownloadCancelledError
 from app.security import SecurityError
 from app.config import settings
@@ -134,12 +135,17 @@ class SidecarRunner:
                     "supported_actions": [
                         "initialize", "health_check", "analyze", "get_formats",
                         "download", "cancel", "queue_add", "queue_list", "queue_cancel",
-                        "queue_retry", "queue_remove", "verify", "convert", "get_capabilities", "shutdown"
+                        "queue_retry", "queue_remove", "verify", "convert", "get_capabilities", "get_diagnostics", "shutdown"
                     ],
                     "video_formats": ["mp4", "mkv", "webm"],
                     "audio_formats": ffmpeg_caps.get("supported_audio_formats", ["mp3", "m4a", "wav", "flac", "ogg", "aac", "opus"]),
                     "ffmpeg": ffmpeg_caps,
                 })
+
+            elif action == "get_diagnostics":
+                limit = payload.get("recent_errors_limit", 20)
+                diag_data = DiagnosticsService.get_system_diagnostics(recent_errors_limit=limit)
+                self.send_response(req_id, status="success", data=diag_data)
 
             elif action in ("analyze", "get_formats"):
                 url = payload.get("url")
