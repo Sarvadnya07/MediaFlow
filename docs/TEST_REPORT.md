@@ -33,28 +33,35 @@
 - **Status:** **PASS** (`tests/test_diagnostics.py`, 4 passed).
 
 ### Phase 16: Final Production Acceptance & Release Candidate (2026-11-08)
+- **Status:** **PASS** (`docs/FINAL_ACCEPTANCE_REPORT.md`, Release Candidate v1.0.0-rc.1 approved).
+
+### ARCH-02: Boundary, Modularity & Fitness Functions (2026-11-08)
+- **Status:** **PASS** (`tests/test_architecture_fitness.py`, AST boundary tests, provider/library IPC actions).
+
+### ARCH-03: Resilience, Concurrency & Operational Architecture Validation (2026-11-08)
 - **Environment:** Windows 11, Rust cargo 1.97.1, Python 3.13, Vite 8.3.6, React 19.3.1.
 
-#### 1. Full Python Engine & Security Test Suite (`pytest -v tests/`)
-- **Status:** **53 Passed, 0 Failed** (100% pass rate across 12 test modules).
+#### 1. Concurrency, Failure-Mode & Resilience Suite (`tests/test_resilience.py`)
+- **Status:** **4 Passed, 0 Failed**.
+  - `test_concurrent_queue_writes_and_sqlite_locking`: 8 worker threads concurrently writing 80 queue jobs without SQLite lock errors.
+  - `test_sidecar_ipc_resilience_to_malformed_and_oversized_payloads`: Truncated, malformed, and invalid IPC messages contained safely.
+  - `test_download_cancellation_releases_thread_and_cleans_token`: Cancellation tokens signal threads and clean up without memory leaks.
+  - `test_network_failure_transient_retry_backoff`: Transient network disconnects trigger jittered exponential backoff.
 
-#### 2. Rust Tauri Desktop Host (`cargo test`, `cargo clippy`, `cargo fmt`)
+#### 2. Full Regression Suite (`pytest -q tests/`)
+- **Status:** **63 Passed, 0 Failed** (100% pass rate across 14 test modules).
+
+#### 3. Rust Tauri Core (`cargo test`)
 - **Status:** **3 Passed, 0 Failed** (Zero clippy warnings; zero format violations).
 
-#### 3. Frontend Vitest & Production Build (`npx vitest run` & `npm run build`)
-- **Status:** **PASS** (2 Vitest tests passed, bundle built in 923ms).
+#### 4. Frontend Vitest & Production Build (`npx vitest run` & `npm run build`)
+- **Status:** **PASS** (2 Vitest tests passed, bundle built cleanly).
 
-#### 4. Native Windows Release Binary Build (`cargo build --release`)
-- **Status:** **PASS** (`src-tauri/target/release/mediadock.exe` created, 9.78MB).
-
-#### 5. Native Python Sidecar Executable Verification
-- **Status:** **PASS** (`mediadock-sidecar-x86_64-pc-windows-msvc.exe` execution verified via stdio JSONL handshake).
-
-#### 6. Total Cumulative Verification Matrix
+#### 5. Total Cumulative Verification Matrix
 | Test Suite | Total Tests | Passed | Failed | Status |
 |---|---|---|---|---|
 | Rust Tauri Core (`cargo test`, `cargo fmt`, `cargo clippy`) | 3 | 3 | 0 | **PASS** |
 | Frontend Component & Bundle (`vitest` & `vite build`) | 3 | 3 | 0 | **PASS** |
-| Python Media Engine, Intelligence, Updates & Library (`pytest`) | 53 | 53 | 0 | **PASS** |
+| Python Media Engine, Intelligence, Fitness & Resilience (`pytest`) | 63 | 63 | 0 | **PASS** |
 | Native Sidecar Binary Verification | 1 | 1 | 0 | **PASS** |
-| **Total Comprehensive Matrix** | **60** | **60** | **0** | **100% PASS** |
+| **Total Comprehensive Matrix** | **70** | **70** | **0** | **100% PASS** |
