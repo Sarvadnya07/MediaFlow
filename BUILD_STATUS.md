@@ -35,6 +35,7 @@ MediaDock is a modern, cross-platform desktop media management and download suit
 
 ## 3. Mandatory Governance Artifacts
 - [x] BUILD_STATUS.md — Active tracker (All phases, ARCH-01..04, BACKEND-01..04, and CLEAN-CODE-01 completed)
+- [x] docs/CODE_QUALITY_AUDIT.md — Complete Code Quality, Maintainability & Architecture Audit Report
 - [x] docs/CLEAN_CODE_FINAL_GATE.md — Clean-Code Final Quality Gate Report
 - [x] docs/BEHAVIORAL_TRUSTWORTHINESS_REPORT.md — Behavioral Quality & Trustworthiness Report
 - [x] docs/ARCHITECTURAL_CLEANLINESS_REPORT.md — Architectural Cleanliness & Boundary Report
