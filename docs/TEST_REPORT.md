@@ -21,31 +21,33 @@
 - **Status:** **PASS** (	ests/test_media_library.py, safe file mutations, disk usage, catalog search).
 
 ### Phase 12: Metadata & Media Intelligence (2026-11-08)
+- **Status:** **PASS** (	ests/test_intelligence.py, title cleaning, chapter parser, transparent AI disclosure).
+
+### Phase 13: Desktop Automation & Productivity (2026-11-08)
 - **Environment:** Windows 11, Rust cargo 1.97.1, Python 3.13, Vite 8.3.6, React 19.3.1.
 
-#### 1. Media Intelligence Suite (	ests/test_intelligence.py)
-- **Status:** **4 Passed, 0 Failed**.
-  - 	est_clean_title_removes_marketing_bracket_fluff: **PASSED**. Stripped bracketed spam while preserving core titles.
-  - 	est_chapter_parsing_from_description: **PASSED**. Extracted timestamped chapters with accurate second offsets.
-  - 	est_tag_extraction_and_categorization: **PASSED**. Extracted meaningful hashtags, keywords, and categorized content.
-  - 	est_enrich_metadata_structure_and_ai_disclosure: **PASSED**. Formatted enriched metadata with explicit external AI disclosure indicators.
+#### 1. Desktop Automation Suite (	ests/test_automation.py)
+- **Status:** **3 Passed, 0 Failed**.
+  - 	est_automation_settings_load_and_save: **PASSED**. Opt-in clipboard preferences, zero-unconfirmed-download policy enforced, and persistent JSON configuration.
+  - 	est_execution_window_evaluation: **PASSED**. Correctly calculates whether current local time is inside configured download hours (including overnight windows).
+  - 	est_drag_and_drop_validation: **PASSED**. Validated web URLs, local media files, subtitle files (.srt), and rejected invalid filesystem targets.
 
 #### 2. Full Regression Suite (pytest -v tests/)
-- **Status:** **43 Passed, 0 Failed** (100% pass rate across 9 test modules).
+- **Status:** **46 Passed, 0 Failed** (100% pass rate across 10 test modules).
 
 #### 3. Rust Tauri IPC Engine (cargo test)
-- **Status:** **3 Passed, 0 Failed** (Zero clippy warnings; enrich_metadata registered).
+- **Status:** **3 Passed, 0 Failed** (Zero clippy warnings; automation IPC commands registered).
 
 #### 4. Frontend Vitest & Production Build (
 pm test & 
 pm run build)
-- **Status:** **PASS** (Clean bundle generated in 680ms).
+- **Status:** **PASS** (Rendered Automation settings view, clean bundle generated in 617ms).
 
-#### 5. Total Cumulative Summary Matrix (Phase 12)
+#### 5. Total Cumulative Summary Matrix (Phase 13)
 | Test Suite | Total Tests | Passed | Failed | Status |
 |---|---|---|---|---|
 | Rust Tauri Core (cargo test, cargo fmt, cargo clippy) | 3 | 3 | 0 | **PASS** |
 | Frontend Component & Bundle (itest & ite build) | 3 | 3 | 0 | **PASS** |
-| Python Media Engine, Intelligence & Library (pytest) | 43 | 43 | 0 | **PASS** |
+| Python Media Engine, Intelligence, Automation & Library (pytest) | 46 | 46 | 0 | **PASS** |
 | Native Sidecar Binary Verification | 1 | 1 | 0 | **PASS** |
-| **Total Comprehensive Matrix** | **50** | **50** | **0** | **100% PASS** |
+| **Total Comprehensive Matrix** | **53** | **53** | **0** | **100% PASS** |
