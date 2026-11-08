@@ -24,14 +24,15 @@ MediaDock is a modern, cross-platform desktop media management and download suit
 - **ARCH-02: Boundary Remediation & Fitness Functions:** COMPLETED (dd7a4ed)
 - **ARCH-03: Resilience, Concurrency & Operational Architecture Validation:** COMPLETED (b44341b)
 - **ARCH-04: Final Architecture & System Design Quality Gate:** COMPLETED & APPROVED (4dfa25a)
-- **BACKEND-01: Complete Backend Engineering Forensic Audit:** **COMPLETED & AUDITED**.
-  - **Working Branch:** `chore/backend-01-audit`
-  - **Desktop Maturity:** Level 3+ (Hardened stdio JSONL IPC, WAL mode queue, cancellation tokens).
-  - **Server Findings Identified:** Documented WebSocket JWT handshake gap and multi-container SQLite volume contention for future server enhancements.
-  - **Deliverable:** `docs/BACKEND_AUDIT_REPORT.md`.
+- **BACKEND-01: Forensic Backend Engineering Audit:** COMPLETED (docs/BACKEND_AUDIT_REPORT.md)
+- **BACKEND-02: Backend Architecture, API & Data Engineering Remediation:** **COMPLETED & VERIFIED**.
+  - **Working Branch:** `feat/backend-02-remediation`
+  - **WebSocket Security Hardening:** Implemented JWT verification and object-level ownership assertions for `/ws/progress/{download_id}` in `app/routes/websockets.py`.
+  - **Server Docker Concurrency:** Migrated multi-container server setup from SQLite volume sharing to PostgreSQL service in `docker-compose.yml`.
+  - **Automated Verification:** Added `tests/test_backend_remediation.py` (5 tests); total suite: **75/75 passing tests (100% pass rate)**.
 
 ## 3. Mandatory Governance Artifacts
-- [x] BUILD_STATUS.md — Active tracker (All phases, ARCH-01..04, and BACKEND-01 completed)
+- [x] BUILD_STATUS.md — Active tracker (All phases, ARCH-01..04, and BACKEND-01..02 completed)
 - [x] docs/BACKEND_AUDIT_REPORT.md — Forensic Backend Engineering Audit Report
 - [x] docs/FINAL_ARCHITECTURE_GATE.md — Final Architecture & System Design Quality Gate Report
 - [x] docs/SYSTEM_DESIGN_RESILIENCE.md — Resilience, Concurrency & Operational Architecture Report
@@ -42,4 +43,4 @@ MediaDock is a modern, cross-platform desktop media management and download suit
 - [x] docs/DECISIONS.md — Architectural Decision Records (ADR-001 through ADR-015)
 - [x] docs/MIGRATION_PLAN.md — Phased migration strategy
 - [x] docs/KNOWN_LIMITATIONS.md — Platform, DRM, and temporary disk constraints
-- [x] docs/TEST_REPORT.md — Automated test report (70 passing tests across 4 test suites)
+- [x] docs/TEST_REPORT.md — Automated test report (75 passing tests across 4 test suites)

@@ -1,6 +1,18 @@
 version: '3.8'
 
 services:
+  db:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: mediadock
+      POSTGRES_PASSWORD: mediadock_password
+      POSTGRES_DB: mediadock
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
   redis:
     image: redis:7-alpine
     ports:
@@ -15,11 +27,11 @@ services:
       - .env
     environment:
       - REDIS_URL=redis://redis:6379/0
-      - DATABASE_URL=sqlite:///./downloads.db
+      - DATABASE_URL=postgresql://mediadock:mediadock_password@db:5432/mediadock
     volumes:
       - ./downloads:/app/downloads
-      - ./downloads.db:/app/downloads.db
     depends_on:
+      - db
       - redis
     restart: always
 
@@ -30,13 +42,14 @@ services:
       - .env
     environment:
       - REDIS_URL=redis://redis:6379/0
-      - DATABASE_URL=sqlite:///./downloads.db
+      - DATABASE_URL=postgresql://mediadock:mediadock_password@db:5432/mediadock
     volumes:
       - ./downloads:/app/downloads
-      - ./downloads.db:/app/downloads.db
     depends_on:
+      - db
       - redis
     restart: always
 
 volumes:
+  postgres_data:
   downloads:
