@@ -13,34 +13,27 @@ MediaDock is a modern, cross-platform desktop media management and download suit
 - **Phase 7: UI/UX and Product Polish:** COMPLETED (c7cbc15)
 - **Phase 8: Final Hardening, Multi-Platform Bundling & Release Engineering:** COMPLETED (8afc282)
 - **Phase 9: Advanced Provider Ecosystem:** COMPLETED (e2b603)
-- **Phase 10: Advanced Download Engine & Intelligent Queue:** **COMPLETED & VERIFIED**.
-  - Priority-based queue ordering and manual reordering.
-  - Per-provider domain concurrency throttling preventing rate-limiting.
-  - Global pause/resume (pause_all / esume_all) and individual job pause controls.
-  - Exponential backoff with jitter on transient download failures.
-  - Clear completed jobs queue management.
-- **Phase 11: Local Media Library & Storage Management:** **COMPLETED & VERIFIED**.
-  - **Working Branch:** eat/phase-10-advanced-download-engine
-  - **Local Media Catalog Engine (pp/library/manager.py):**
-    - SQLite persistence for indexed media items with format, resolution, duration, and file size.
-    - Full-text search and category filtering (ideo, udio, category, avorites).
-    - Safe in-place file renaming and deletion strictly contained within managed directories.
-    - Real disk usage analysis and category breakdown via get_storage_stats().
-    - Auto-indexing hook on queue job completion.
-  - **Desktop UI & Tauri IPC Integration:**
-    - Dedicated **Media Library** tab in navigation sidebar.
-    - Media item cards with format badge, file size, reveal button, and catalog management.
-    - Tauri IPC commands: library_get_items, library_get_stats, library_reindex, library_set_favorite, library_rename, library_delete.
+- **Phase 10: Advanced Download Engine & Intelligent Queue:** COMPLETED (12b767b)
+- **Phase 11: Local Media Library & Storage Management:** COMPLETED (12b767b)
+- **Phase 12: Metadata & Media Intelligence:** **COMPLETED & VERIFIED**.
+  - **Working Branch:** eat/phase-12-metadata-intelligence
+  - **Media Intelligence Engine (pp/services/intelligence_service.py):**
+    - Deterministic title cleaning (strips marketing fluff, brackets, and resolution tags).
+    - Chapter parser extracting timestamped chapters from video descriptions.
+    - Local NLP tag and keyword extraction.
+    - Category classification engine (Music, Education, Gaming, Technology, News, Entertainment).
+    - Optional LLM integration with mandatory explicit disclosure indicators and zero unsolicited binary uploads.
+  - **Tauri IPC Command:** Registered enrich_metadata in Tauri Rust supervisor.
   - **Automated Verification:**
-    - Added 	ests/test_advanced_engine.py (3 tests) and 	ests/test_media_library.py (4 tests).
-    - Full test suite: **46/46 passing tests (100% pass rate across Rust, Python, and TypeScript)**.
+    - Added 	ests/test_intelligence.py (4 tests).
+    - Full test suite: **50/50 passing tests (100% pass rate across Rust, Python, and TypeScript)**.
 
 ## 3. Mandatory Governance Artifacts
-- [x] BUILD_STATUS.md — Active tracker (All 11 phases completed)
+- [x] BUILD_STATUS.md — Active tracker (All 12 phases completed)
 - [x] docs/SYSTEM_DESIGN_AUDIT.md — Forensic ARCH-01 Architecture & System Design Audit
 - [x] docs/PROJECT_AUDIT.md — Historical audit verification and security assessment
 - [x] docs/ARCHITECTURE.md — System architecture and IPC contract design
-- [x] docs/DECISIONS.md — Architectural Decision Records (ADR-001 through ADR-011)
+- [x] docs/DECISIONS.md — Architectural Decision Records (ADR-001 through ADR-012)
 - [x] docs/MIGRATION_PLAN.md — Phased migration strategy
 - [x] docs/KNOWN_LIMITATIONS.md — Platform, DRM, and temporary disk constraints
-- [x] docs/TEST_REPORT.md — Automated test report (46 passing tests across 4 test suites)
+- [x] docs/TEST_REPORT.md — Automated test report (50 passing tests across 4 test suites)
