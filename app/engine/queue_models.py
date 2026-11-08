@@ -1,6 +1,5 @@
 import enum
 import time
-from datetime import datetime, timezone
 from typing import Dict, List, Optional
 from pydantic import BaseModel, Field
 
@@ -19,10 +18,10 @@ class DownloadState(str, enum.Enum):
 
 # Explicit valid state transition graph
 VALID_TRANSITIONS: Dict[DownloadState, List[DownloadState]] = {
-    DownloadState.QUEUED: [DownloadState.ANALYZING, DownloadState.DOWNLOADING, DownloadState.CANCELLED, DownloadState.FAILED],
-    DownloadState.ANALYZING: [DownloadState.DOWNLOADING, DownloadState.FAILED, DownloadState.CANCELLED],
+    DownloadState.QUEUED: [DownloadState.ANALYZING, DownloadState.DOWNLOADING, DownloadState.CANCELLED, DownloadState.FAILED, DownloadState.PAUSED],
+    DownloadState.ANALYZING: [DownloadState.DOWNLOADING, DownloadState.FAILED, DownloadState.CANCELLED, DownloadState.PAUSED],
     DownloadState.DOWNLOADING: [DownloadState.PROCESSING, DownloadState.PAUSED, DownloadState.FAILED, DownloadState.CANCELLED],
-    DownloadState.PAUSED: [DownloadState.DOWNLOADING, DownloadState.CANCELLED, DownloadState.FAILED],
+    DownloadState.PAUSED: [DownloadState.DOWNLOADING, DownloadState.QUEUED, DownloadState.CANCELLED, DownloadState.FAILED],
     DownloadState.PROCESSING: [DownloadState.VERIFYING, DownloadState.FAILED, DownloadState.CANCELLED],
     DownloadState.VERIFYING: [DownloadState.COMPLETED, DownloadState.FAILED],
     DownloadState.COMPLETED: [],  # Terminal
@@ -40,6 +39,7 @@ class QueueItem(BaseModel):
     url: str
     title: str = "Pending Analysis"
     state: DownloadState = DownloadState.QUEUED
+    priority: int = 0  # Higher value = processed sooner
     format_id: Optional[str] = None
     quality: Optional[str] = None
     subtitle_lang: Optional[str] = None
