@@ -48,18 +48,19 @@
 - **Status:** **PASS** (`docs/BACKEND_AUDIT_REPORT.md`).
 
 ### BACKEND-02: Backend Architecture, API & Data Engineering Remediation (2026-11-08)
+- **Status:** **PASS** (`tests/test_backend_remediation.py`, WebSocket JWT ownership, Postgres compose).
+
+### BACKEND-03: Backend Reliability, Security, Concurrency & Data Validation (2026-11-08)
 - **Environment:** Windows 11, Rust cargo 1.97.1, Python 3.13, Vite 8.3.6, React 19.3.1.
 
-#### 1. Backend Remediation & Security Suite (`tests/test_backend_remediation.py`)
-- **Status:** **5 Passed, 0 Failed**.
-  - `test_ws_missing_token_rejected`: Unauthenticated WebSocket connections rejected.
-  - `test_ws_invalid_token_rejected`: Tampered/invalid JWT tokens rejected.
-  - `test_ws_valid_token_owner_allowed`: Legitimate owner accepted.
-  - `test_ws_valid_token_non_owner_forbidden`: Non-owner user blocked from stream.
-  - `test_ws_admin_token_allowed_for_any_download`: Admin role accepted.
+#### 1. Security & Concurrency Proof Suite (`tests/test_backend_proof.py`)
+- **Status:** **3 Passed, 0 Failed**.
+  - `test_object_level_authorization_query_isolation`: IDOR protection proven via query-scoped isolation.
+  - `test_ssrf_and_dns_rebinding_adversarial_injection`: Rejection of 9 adversarial SSRF/loopback/cloud metadata vectors.
+  - `test_concurrent_cancellation_race_condition_safety`: Race condition safety across 10 concurrent cancellation workers.
 
 #### 2. Full Regression Suite (`pytest -q tests/`)
-- **Status:** **68 Passed, 0 Failed** (100% pass rate across 15 test modules).
+- **Status:** **71 Passed, 0 Failed** (100% pass rate across 16 test modules).
 
 #### 3. Rust Tauri Core (`cargo test`)
 - **Status:** **3 Passed, 0 Failed** (Zero clippy warnings; zero format violations).
@@ -72,6 +73,6 @@
 |---|---|---|---|---|
 | Rust Tauri Core (`cargo test`, `cargo fmt`, `cargo clippy`) | 3 | 3 | 0 | **PASS** |
 | Frontend Component & Bundle (`vitest` & `vite build`) | 3 | 3 | 0 | **PASS** |
-| Python Media Engine, Intelligence, Security & Backend (`pytest`) | 68 | 68 | 0 | **PASS** |
+| Python Media Engine, Intelligence, Security, Resilience & Proofs (`pytest`) | 71 | 71 | 0 | **PASS** |
 | Native Sidecar Binary Verification | 1 | 1 | 0 | **PASS** |
-| **Total Comprehensive Matrix** | **75** | **75** | **0** | **100% PASS** |
+| **Total Comprehensive Matrix** | **78** | **78** | **0** | **100% PASS** |

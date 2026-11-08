@@ -25,14 +25,16 @@ MediaDock is a modern, cross-platform desktop media management and download suit
 - **ARCH-03: Resilience, Concurrency & Operational Architecture Validation:** COMPLETED (b44341b)
 - **ARCH-04: Final Architecture & System Design Quality Gate:** COMPLETED & APPROVED (4dfa25a)
 - **BACKEND-01: Forensic Backend Engineering Audit:** COMPLETED (docs/BACKEND_AUDIT_REPORT.md)
-- **BACKEND-02: Backend Architecture, API & Data Engineering Remediation:** **COMPLETED & VERIFIED**.
-  - **Working Branch:** `feat/backend-02-remediation`
-  - **WebSocket Security Hardening:** Implemented JWT verification and object-level ownership assertions for `/ws/progress/{download_id}` in `app/routes/websockets.py`.
-  - **Server Docker Concurrency:** Migrated multi-container server setup from SQLite volume sharing to PostgreSQL service in `docker-compose.yml`.
-  - **Automated Verification:** Added `tests/test_backend_remediation.py` (5 tests); total suite: **75/75 passing tests (100% pass rate)**.
+- **BACKEND-02: Backend Architecture, API & Data Engineering Remediation:** COMPLETED (0c09608)
+- **BACKEND-03: Backend Reliability, Security, Concurrency & Data Validation:** **COMPLETED & VERIFIED**.
+  - **Working Branch:** `feat/backend-03-validation`
+  - **Adversarial Proofs Added:** `tests/test_backend_proof.py` (3 tests verifying IDOR query isolation, 9-vector SSRF rejection, and multi-thread cancellation race immunity).
+  - **Automated Verification:** Full test suite: **78/78 passing tests across Rust, Python, and TypeScript (100% pass rate)**.
+  - **Deliverable:** `docs/BACKEND_RELIABILITY_VALIDATION.md`.
 
 ## 3. Mandatory Governance Artifacts
-- [x] BUILD_STATUS.md — Active tracker (All phases, ARCH-01..04, and BACKEND-01..02 completed)
+- [x] BUILD_STATUS.md — Active tracker (All phases, ARCH-01..04, and BACKEND-01..03 completed)
+- [x] docs/BACKEND_RELIABILITY_VALIDATION.md — Backend Reliability, Security, Concurrency & Data Validation Report
 - [x] docs/BACKEND_AUDIT_REPORT.md — Forensic Backend Engineering Audit Report
 - [x] docs/FINAL_ARCHITECTURE_GATE.md — Final Architecture & System Design Quality Gate Report
 - [x] docs/SYSTEM_DESIGN_RESILIENCE.md — Resilience, Concurrency & Operational Architecture Report
@@ -43,4 +45,4 @@ MediaDock is a modern, cross-platform desktop media management and download suit
 - [x] docs/DECISIONS.md — Architectural Decision Records (ADR-001 through ADR-015)
 - [x] docs/MIGRATION_PLAN.md — Phased migration strategy
 - [x] docs/KNOWN_LIMITATIONS.md — Platform, DRM, and temporary disk constraints
-- [x] docs/TEST_REPORT.md — Automated test report (75 passing tests across 4 test suites)
+- [x] docs/TEST_REPORT.md — Automated test report (78 passing tests across 4 test suites)
