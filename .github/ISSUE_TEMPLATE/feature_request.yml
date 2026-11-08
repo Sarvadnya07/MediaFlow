@@ -1,0 +1,28 @@
+name: Feature Request
+description: Propose a new feature, enhancement, or capability for MediaFlow
+title: "[FEATURE]: "
+labels: ["enhancement", "proposal"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        We appreciate suggestions to improve MediaFlow! Keep in mind that MediaFlow respects intellectual property and will not implement DRM bypasses or unauthorized credential exfiltration.
+  - type: textarea
+    id: problem-statement
+    attributes:
+      label: Is your feature request related to a problem or limitation?
+      description: A clear and concise description of the limitation or workflow gap.
+    validations:
+      required: true
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: Proposed Solution or Behavior
+      description: Describe how you envision this feature working and what user experience it enables.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives-considered
+    attributes:
+      label: Alternatives Considered
+      description: Any alternative designs, workarounds, or existing tools you have evaluated.

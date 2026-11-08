@@ -1,8 +1,55 @@
-venv
-__pycache__
-.env
-*.db
-downloads
-.git
+# ==============================================================================
+# MediaFlow Docker Build Ignore
+# Excludes unnecessary host files from entering container build context
+# ==============================================================================
+
+# Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+
+# Python caches and bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+build/
+dist/
+
+# Git metadata
+.git/
+.github/
 .gitignore
-alembic/versions/*.pyc
+.gitattributes
+
+# Environment files and credentials
+.env
+.env.*
+*.pem
+*.key
+
+# Database and media files
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+downloads/
+temp_downloads/
+logs/
+*.log
+
+# Frontend & Desktop development trees
+frontend/node_modules/
+frontend/dist/
+src-tauri/target/
+packaging/dist/
+
+# Documentation and temporary drafts
+docs/
+*.md
+!README.md

@@ -1,23 +1,30 @@
 # Changelog
 
-All notable changes to MediaDock will be documented in this file.
+All notable changes to **MediaFlow** will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+---
+
 ## [1.0.0-rc.1] - 2026-11-08
 
 ### Added
-- **Native Desktop Shell & Architecture**: Production Tauri 2 + Rust supervisor running an isolated Python yt-dlp worker exclusively over stdio JSON Lines (`stdin`/`stdout`).
-- **Universal Provider Ecosystem**: Extensible registry supporting universal yt-dlp fallback and direct HTTP/HTTPS web media parsing with automatic range request detection.
-- **Intelligent Download Engine**: Priority scheduling, per-provider domain concurrency throttling, exponential backoff with jitter retry, atomic `.part` promotions, and pause/resume.
-- **Local Media Library & Storage**: SQLite-backed local catalog, file favorites, safe rename/deletion within contained boundaries, and real disk usage metrics via `shutil.disk_usage`.
-- **Media Intelligence & Subtitles**: Heuristic title fluff stripping, timestamped chapter extraction, category classification, transparent AI disclosure flags, and multi-language subtitle parsing.
-- **Desktop Automation**: System clipboard URL monitoring, drag-and-drop validation for media/subtitles, and configurable night-time download execution windows.
-- **Auto-Updates & Release Channels**: Stable (default), Beta, and Development release channels, SHA256 manifest verification, and zero-downtime SQLite online backup before schema changes.
-- **Observability & Diagnostics**: Structured JSON logging, automated credential token redaction (`[REDACTED]`), 5MB rotating file handler, and comprehensive system diagnostics telemetry.
-- **Security & Hardening**: Strict RFC 1918 / loopback IP blocking, DNS rebinding guards, canonical directory traversal containment, zero DRM circumvention, and no cookie harvesting.
+- **Native Desktop Topology**: Production Tauri 2 + Rust supervisor executing an isolated Python yt-dlp media engine via standard I/O (`stdin`/`stdout` JSON Lines protocol).
+- **Headless & Distributed Backend**: FastAPI REST and WebSocket endpoints with Celery worker pipeline backed by Redis task broker and PostgreSQL/SQLite persistence.
+- **Universal Provider Architecture**: Extensible provider registry with yt-dlp universal extractor fallback and direct HTTP/HTTPS web media parsing with automatic byte-range header detection.
+- **Resilient Download Pipeline**: Multi-priority download queue, per-domain concurrency rate limiting, exponential backoff with randomized jitter, atomic `.part` promotions, and safe pause/resume lifecycle.
+- **Local Media Management**: SQLite WAL-backed metadata catalog, favorites tagging, safe containment-checked renaming/deletion, and real-time disk quota monitoring via `shutil.disk_usage`.
+- **Media Post-Processing & Intelligence**: Heuristic video title fluff cleanup, chapter extraction, category detection, subtitle stream parsing, and FFmpeg transcode/audio extraction presets.
+- **Desktop Automation**: System clipboard media URL watcher, drag-and-drop validation for media streams, and configurable nighttime scheduled download windows.
+- **Defense-in-Depth Security**: RFC 1918 private IP blocking, DNS rebinding guards, canonical path traversal protections, CSP policies, zero DRM circumvention, and zero cookie harvesting.
+- **Repository Quality & Hygiene**: Modularized React UI components, strict single-direction dependency graph, comprehensive `.env.example`, cross-platform `.gitattributes`, and strict `.gitignore` rules.
+
+### Changed
+- Refactored frontend navigation into isolated, domain-focused tab views (`AnalysisView`, `QueueView`, `LibraryView`, `ConverterView`, `AutomationView`, `DiagnosticsView`, `SettingsView`).
+- Standardized all application timestamps to timezone-aware UTC (`datetime.now(timezone.utc)`).
+- Upgraded test harness with `@pytest.mark.network` annotations for rapid, deterministic offline test runs.
 
 ### Verified
-- Automated test matrix: 58/58 passing tests across Python, Rust, and TypeScript.
-- Release binary builds on Windows x86_64 (`mediadock.exe` 9.7MB, standalone sidecar 30.0MB).
+- Automated test matrix: 79 passing tests across Python (72), Vitest (4), and Cargo (3).
+- Clean cross-platform artifact builds on Windows x86_64.

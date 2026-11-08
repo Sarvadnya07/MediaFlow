@@ -1,0 +1,52 @@
+# ==============================================================================
+# MediaFlow Git Attributes
+# Controls checkout line ending conversions and binary/text classifications
+# ==============================================================================
+
+# Default behavior: normalize text files to LF on commit
+* text=auto eol=lf
+
+# Explicitly ensure Windows scripts retain CRLF
+*.bat           text eol=crlf
+*.cmd           text eol=crlf
+*.ps1           text eol=crlf
+
+# Shell scripts and Unix configs must retain LF
+*.sh            text eol=lf
+
+# Python, Rust, JavaScript, Web source files
+*.py            text eol=lf
+*.rs            text eol=lf
+*.js            text eol=lf
+*.jsx           text eol=lf
+*.ts            text eol=lf
+*.tsx           text eol=lf
+*.json          text eol=lf
+*.toml          text eol=lf
+*.yaml          text eol=lf
+*.yml           text eol=lf
+*.md            text eol=lf
+
+# Binary media and database formats
+*.db            binary
+*.sqlite        binary
+*.sqlite3       binary
+*.png           binary
+*.jpg           binary
+*.jpeg          binary
+*.gif           binary
+*.ico           binary
+*.webp          binary
+*.svg           text eol=lf
+*.exe           binary
+*.dll           binary
+*.so            binary
+*.dylib         binary
+*.woff          binary
+*.woff2         binary
+*.ttf           binary
+*.eot           binary
+*.mp4           binary
+*.mkv           binary
+*.mp3           binary
+*.webm          binary

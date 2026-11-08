@@ -1,51 +1,103 @@
-# MediaDock — Installation Guide
+# MediaFlow — Installation & Setup Guide
 
-MediaDock can be run either as a native desktop application or as a headless server backend.
-
----
-
-## 1. Desktop Application Installation
-
-### Windows
-1. Download `MediaDock-Setup-x64.exe` (NSIS) or `MediaDock-x64.msi` from the [Releases](https://github.com/mediadock/mediadock/releases) page.
-2. Run the installer and follow the setup wizard.
-3. Launch **MediaDock** from the Start Menu.
-
-### macOS
-1. Download `MediaDock-Universal.dmg` or architecture-specific DMG (`aarch64` for Apple Silicon, `x64` for Intel).
-2. Open the DMG and drag **MediaDock.app** into `/Applications`.
-3. Launch MediaDock from Finder or Spotlight.
-
-### Linux
-1. **AppImage**:
-   ```bash
-   chmod +x MediaDock-x86_64.AppImage
-   ./MediaDock-x86_64.AppImage
-   ```
-2. **Debian / Ubuntu (`.deb`)**:
-   ```bash
-   sudo dpkg -i mediadock_amd64.deb
-   sudo apt-get install -f
-   ```
-3. **Fedora / RHEL (`.rpm`)**:
-   ```bash
-   sudo rpm -ivh mediadock_x86_64.rpm
-   ```
+MediaFlow can be deployed either as a **Desktop Application** or as a **Headless API & Worker Backend**. Choose the installation instructions below matching your target environment.
 
 ---
 
-## 2. Headless Server Mode (Optional)
+## 1. System Prerequisites
 
-If running MediaDock in cloud / Docker mode:
+Before beginning, ensure your system meets the minimum requirements:
 
+| Dependency | Minimum Version | Required By | Installation Reference |
+| :--- | :--- | :--- | :--- |
+| **Python** | 3.11+ | Media Engine & API | [python.org](https://www.python.org/) |
+| **FFmpeg** | 4.4+ (6.0+ recommended) | Remuxing & Transcoding | [ffmpeg.org](https://ffmpeg.org/) |
+| **Node.js** | 20+ LTS | Desktop UI | [nodejs.org](https://nodejs.org/) |
+| **Rust** | 1.78+ | Tauri Supervisor | [rustup.rs](https://rustup.rs/) |
+| **Docker** | 24.0+ *(Optional)* | Containerized Headless Stack | [docker.com](https://www.docker.com/) |
+
+> [!IMPORTANT]
+> Verify that `ffmpeg` and `ffprobe` are executable from your terminal by running:
+> ```bash
+> ffmpeg -version
+> ffprobe -version
+> ```
+
+---
+
+## 2. Desktop Application Setup (Development Mode)
+
+### Step 1: Clone Repository
 ```bash
-# Clone the repository
-git clone https://github.com/mediadock/mediadock.git
-cd mediadock
-
-# Copy and configure environment variables
-cp .env.example .env
-
-# Launch with Docker Compose
-docker compose up -d
+git clone https://github.com/your-username/mediaflow.git
+cd mediaflow
 ```
+
+### Step 2: Python Virtual Environment
+```bash
+python -m venv venv
+
+# Windows (PowerShell):
+.\venv\Scripts\Activate.ps1
+
+# Linux / macOS:
+source venv/bin/activate
+
+pip install --upgrade pip
+pip install -r requirements-dev.txt
+```
+
+### Step 3: Frontend Dependencies
+```bash
+cd frontend
+npm install
+cd ..
+```
+
+### Step 4: Run Desktop in Development
+```bash
+# In frontend directory:
+cd frontend
+npm run tauri dev
+```
+Tauri will compile the Rust supervisor, initialize the Python background sidecar over standard I/O, and launch the React UI window.
+
+---
+
+## 3. Headless Server & Docker Setup
+
+### Step 1: Environment Configuration
+Copy the configuration template to `.env`:
+```bash
+cp .env.example .env
+```
+Open `.env` and verify the parameters.
+
+### Step 2: Launch with Docker Compose
+```bash
+docker compose up -d --build
+```
+This launches:
+- `mediaflow-db`: PostgreSQL 16
+- `mediaflow-redis`: Redis 7 Broker
+- `mediaflow-api`: FastAPI backend with Alembic migrations on port `8000`
+- `mediaflow-worker`: Celery worker dedicated to download & processing queues
+
+Verify running containers:
+```bash
+docker compose ps
+```
+
+Visit the interactive OpenAPI documentation at: `http://localhost:8000/docs`.
+
+---
+
+## 4. Troubleshooting Common Setup Issues
+
+### `ffmpeg: command not found`
+- **Linux**: `sudo apt install ffmpeg` (Debian/Ubuntu) or `sudo dnf install ffmpeg` (Fedora).
+- **macOS**: `brew install ffmpeg`
+- **Windows**: Install via `winget install Gyan.FFmpeg` or extract binaries and append to System `PATH`.
+
+### SQLite Database Locked in Desktop Mode
+Ensure no orphan Python sidecar processes are running in Task Manager. MediaFlow uses WAL mode to prevent locking during normal operations.

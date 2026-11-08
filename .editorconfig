@@ -1,0 +1,46 @@
+# ==============================================================================
+# MediaFlow EditorConfig
+# Ensures uniform indentation and line endings across heterogeneous teams
+# ==============================================================================
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+# Python files
+[*.py]
+indent_style = space
+indent_size = 4
+max_line_length = 100
+
+# Rust source files
+[*.rs]
+indent_style = space
+indent_size = 4
+
+# JavaScript, TypeScript, JSX, TSX, JSON, HTML, CSS
+[*.{js,jsx,ts,tsx,json,css,scss,html}]
+indent_style = space
+indent_size = 2
+
+# YAML and configuration files
+[*.{yml,yaml,toml,ini}]
+indent_style = space
+indent_size = 2
+
+# Markdown documentation
+[*.md]
+trim_trailing_whitespace = false
+max_line_length = 0
+
+# Windows Batch scripts
+[*.{bat,cmd}]
+end_of_line = crlf
+indent_style = space
+indent_size = 4

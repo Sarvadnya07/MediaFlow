@@ -1,0 +1,16 @@
+# MediaFlow Development, Testing, and Quality Engineering Dependencies
+-r requirements.txt
+
+# Testing & Concurrency Validation
+pytest>=8.0.0
+pytest-asyncio>=0.23.0
+httpx>=0.27.0
+
+# Linting, Formatting, and Code Quality
+flake8>=7.0.0
+black>=24.0.0
+isort>=5.13.0
+mypy>=1.10.0
+
+# Optional Packaging Tools
+pyinstaller>=6.10.0

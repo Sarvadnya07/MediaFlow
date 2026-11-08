@@ -1,10 +1,20 @@
-# Environment variables
+# ==============================================================================
+# MediaFlow Git Ignore Rules
+# ==============================================================================
+
+# Environment variables & secrets
 .env
 .env.local
 .env.*.local
 *.env
+*.pem
+*.key
+*.cert
+*.pfx
+credentials.json
+client_secrets.json
 
-# Python bytecode and caches
+# Python bytecode and compiled caches
 __pycache__/
 *.py[cod]
 *$py.class
@@ -14,6 +24,8 @@ build/
 develop-eggs/
 dist/
 downloads/
+media/
+temp_downloads/
 eggs/
 .eggs/
 lib/
@@ -28,38 +40,94 @@ share/python-wheels/
 *.egg
 MANIFEST
 
-# Virtual environments
+# Python test, coverage and linting caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+
+# Python Virtual Environments
 venv/
 env/
 ENV/
 .venv/
+env.bak/
+venv.bak/
 
-# Database files
+# Database files & SQLite transient artifacts
 *.db
+*.db-shm
+*.db-wal
+*.db-journal
 *.sqlite
 *.sqlite3
+*.sqlite3-shm
+*.sqlite3-wal
+mediadock_*.db
+mediadock_*.db-wal
+mediadock_*.db-shm
 
-# Logs and runtime data
+# Application logs and runtime worker data
 *.log
 app.log
+logs/
 celerybeat-schedule
+celerybeat-schedule.*
 celerybeat.pid
 
 # Node / Frontend (Tauri & Vite)
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/.turbo/
 node_modules/
 dist/
 dist-ssr/
 *.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
-# Rust / Tauri
+# Rust / Cargo / Tauri build outputs
 src-tauri/target/
 target/
 *.pdb
+*.exe
+*.dll
+*.dylib
+*.so
+*.msi
+*.deb
+*.rpm
+*.appimage
+*.dmg
 
-# IDE and OS artifacts
+# Packaging sidecars & binaries
+packaging/dist/
+packaging/build/
+*.spec
+
+# IDE, Editor & OS artifacts
 .vscode/
+!.vscode/extensions.json
 .idea/
+*.sublime-project
+*.sublime-workspace
 *.swp
 *.swo
+*~
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+Desktop.ini
