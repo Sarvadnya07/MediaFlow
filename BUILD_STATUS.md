@@ -16,27 +16,27 @@ MediaDock is a modern, cross-platform desktop media management and download suit
 - **Phase 10: Advanced Download Engine & Intelligent Queue:** COMPLETED (12b767b)
 - **Phase 11: Local Media Library & Storage Management:** COMPLETED (12b767b)
 - **Phase 12: Metadata & Media Intelligence:** COMPLETED (964f04)
-- **Phase 13: Desktop Automation & Productivity:** **COMPLETED & VERIFIED**.
-  - **Working Branch:** eat/phase-13-automation-productivity
-  - **Desktop Automation Engine (pp/services/automation_service.py):**
-    - Opt-in clipboard monitoring preference structure.
-    - Strict security policy: automatic downloads without explicit user confirmation are permanently disallowed (uto_download_without_confirm: false).
-    - Configurable off-peak execution windows (start_hour/minute to end_hour/minute) with overnight window support.
-    - Drag-and-drop file and URL validator distinguishing web URLs, local audio/video media, and subtitle tracks (.srt, .vtt, .ass).
-    - Granular desktop notification preferences per event type.
+- **Phase 13: Desktop Automation & Productivity:** COMPLETED (7ece201)
+- **Phase 14: Auto-Updates & Release Management:** **COMPLETED & VERIFIED**.
+  - **Working Branch:** eat/phase-14-updates-release-management
+  - **Release & Update Engine (pp/services/update_service.py):**
+    - Multi-channel support (Stable [default], Beta, Development).
+    - Cryptographic update signature verification & minimum sidecar version compatibility.
+    - Pre-migration SQLite snapshot creation (create_pre_migration_backup) using SQLite online backup API.
+    - Atomic database rollback recovery (ollback_database_from_backup).
   - **Desktop UI & Tauri IPC Commands:**
-    - Settings pane updated with Desktop Automation & Productivity controls.
-    - Registered IPC commands: utomation_get_settings, utomation_save_settings, utomation_validate_drop.
+    - Settings pane updated with Release Channel selection and Database Snapshot indicator.
+    - Registered IPC commands: update_check, update_set_channel, database_backup.
   - **Automated Verification:**
-    - Added 	ests/test_automation.py (3 tests).
-    - Full test suite: **53/53 passing tests (100% pass rate across Rust, Python, and TypeScript)**.
+    - Added 	ests/test_updates.py (3 tests).
+    - Full test suite: **56/56 passing tests (100% pass rate across Rust, Python, and TypeScript)**.
 
 ## 3. Mandatory Governance Artifacts
-- [x] BUILD_STATUS.md — Active tracker (All 13 phases completed)
+- [x] BUILD_STATUS.md — Active tracker (All 14 phases completed)
 - [x] docs/SYSTEM_DESIGN_AUDIT.md — Forensic ARCH-01 Architecture & System Design Audit
 - [x] docs/PROJECT_AUDIT.md — Historical audit verification and security assessment
 - [x] docs/ARCHITECTURE.md — System architecture and IPC contract design
-- [x] docs/DECISIONS.md — Architectural Decision Records (ADR-001 through ADR-013)
+- [x] docs/DECISIONS.md — Architectural Decision Records (ADR-001 through ADR-014)
 - [x] docs/MIGRATION_PLAN.md — Phased migration strategy
 - [x] docs/KNOWN_LIMITATIONS.md — Platform, DRM, and temporary disk constraints
-- [x] docs/TEST_REPORT.md — Automated test report (53 passing tests across 4 test suites)
+- [x] docs/TEST_REPORT.md — Automated test report (56 passing tests across 4 test suites)
