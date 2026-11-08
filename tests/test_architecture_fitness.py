@@ -37,7 +37,6 @@ def test_core_engine_does_not_import_server_frameworks():
     forbidden_frameworks = {"fastapi", "uvicorn", "celery", "redis"}
 
     engine_paths = list((APP_DIR / "engine").glob("*.py"))
-    # Exclude server-only tasks in services if any (yt_service, ffmpeg_service, etc.)
     service_paths = [
         p for p in (APP_DIR / "services").glob("*.py")
         if p.name not in ("ai_service.py",)  # legacy server stubs
@@ -113,3 +112,42 @@ def test_provider_registry_contract_uniformity():
         assert info.name
         assert hasattr(info.capabilities, "video")
         assert hasattr(info.capabilities, "audio")
+
+
+def test_app_dependency_graph_is_acyclic():
+    """
+    Fitness Function 5:
+    The app module graph must be a strict directed acyclic graph (DAG).
+    Zero circular dependencies are permitted.
+    """
+    import glob
+    modules = glob.glob(str(APP_DIR / "**/*.py"), recursive=True)
+    adj = {}
+    for m in modules:
+        rel = os.path.relpath(m, str(APP_DIR.parent)).replace("\\", "/").replace(".py", "").replace("/__init__", "").replace("/", ".")
+        imports = get_imported_modules_for_file(Path(m))
+        adj[rel] = {imp for imp in imports if imp.startswith("app")}
+
+    visited = {}
+    cycles = []
+
+    def dfs(node, path):
+        visited[node] = 1
+        for neighbor in adj.get(node, []):
+            match = None
+            for k in adj:
+                if k == neighbor or neighbor.startswith(k + "."):
+                    match = k
+                    break
+            if match:
+                if visited.get(match) == 1:
+                    cycles.append(path + [match])
+                elif visited.get(match, 0) == 0:
+                    dfs(match, path + [match])
+        visited[node] = 2
+
+    for k in adj:
+        if visited.get(k, 0) == 0:
+            dfs(k, [k])
+
+    assert len(cycles) == 0, f"Detected circular dependency cycle in app: {cycles}"
