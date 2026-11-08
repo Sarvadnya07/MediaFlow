@@ -40,14 +40,33 @@ export function App() {
   // Search & Filter in History
   const [historySearch, setHistorySearch] = useState('');
 
-  // Settings State
-  const [settingsForm, setSettingsForm] = useState({
-    downloadDir: 'C:\\Users\\ASUS\\Desktop\\STUDY\\PROJECTS\\yt_dlp_backend\\downloads',
-    maxConcurrent: 3,
-    autoConvertAudio: false,
-    defaultAudioFormat: 'mp3',
-    embedSubtitles: true,
+  // Settings State with LocalStorage Persistence
+  const [settingsForm, setSettingsForm] = useState(() => {
+    const saved = localStorage.getItem('mediadock_settings');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        // Fall back to defaults
+      }
+    }
+    return {
+      downloadDir: 'C:\\Users\\ASUS\\Desktop\\STUDY\\PROJECTS\\yt_dlp_backend\\downloads',
+      maxConcurrent: 3,
+      autoConvertAudio: false,
+      defaultAudioFormat: 'mp3',
+      embedSubtitles: true,
+    };
   });
+
+  const handleSaveSettings = () => {
+    try {
+      localStorage.setItem('mediadock_settings', JSON.stringify(settingsForm));
+      addToast('Settings saved successfully', 'success');
+    } catch (e) {
+      addToast('Failed to save settings', 'error');
+    }
+  };
 
   // Download selection states
   const [mediaType, setMediaType] = useState<'video' | 'audio'>('video');
@@ -475,7 +494,7 @@ export function App() {
               darkMode={darkMode}
               settingsForm={settingsForm}
               onSettingsChange={setSettingsForm}
-              onSave={() => addToast('Settings saved successfully', 'success')}
+              onSave={handleSaveSettings}
             />
           )}
 

@@ -44,6 +44,7 @@ def test_direct_http_provider_capabilities():
     assert p.matches_url("https://files.test.org/sample.unknown") is False
 
 
+@pytest.mark.network
 def test_direct_http_provider_analyze_and_download(tmp_path):
     # Create a small local test file served as direct URL simulated
     p = DirectHttpProvider()

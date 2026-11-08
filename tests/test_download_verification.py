@@ -17,6 +17,7 @@ def test_verify_media_file_empty(tmp_path):
         verify_media_file(str(empty_file))
 
 
+@pytest.mark.network
 def test_download_stream_and_verify_real_authorized_media(tmp_path):
     """
     Acceptance test demonstrating a complete real media download,
