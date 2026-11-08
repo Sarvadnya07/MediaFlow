@@ -91,3 +91,30 @@ def test_sidecar_cancel(mock_io):
     assert output["id"] == "req-cancel"
     assert output["status"] == "success"
     assert output["data"]["job_id"] == "job-999"
+
+
+def test_sidecar_providers_list(mock_io):
+    runner, stdin, stdout = mock_io
+    req = {"id": "req-prov", "action": "providers_list"}
+    runner.handle_raw_message(json.dumps(req))
+    output = json.loads(stdout.getvalue().strip())
+    assert output["id"] == "req-prov"
+    assert output["status"] == "success"
+    assert "providers" in output["data"]
+    assert len(output["data"]["providers"]) >= 2
+
+
+def test_sidecar_intelligence_enrich(mock_io):
+    runner, stdin, stdout = mock_io
+    req = {
+        "id": "req-enrich",
+        "action": "intelligence_enrich",
+        "payload": {"title": "Learn Rust in 2026 [4K 60FPS Tutorial]", "description": "00:00 Intro\n01:30 Setup"},
+    }
+    runner.handle_raw_message(json.dumps(req))
+    output = json.loads(stdout.getvalue().strip())
+    assert output["id"] == "req-enrich"
+    assert output["status"] == "success"
+    assert output["data"]["cleaned_title"] == "Learn Rust in 2026"
+    assert len(output["data"]["chapters"]) == 2
+

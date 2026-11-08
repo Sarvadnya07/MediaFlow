@@ -55,3 +55,17 @@
 - **Context:** Audit revealed path traversal in `/v1/files/{filename}`, secret leakage via tracked `.env`, and unhandled exception details leaking system paths.
 - **Decision:** Remove `.env` from Git tracking, provide `.env.example`, enforce strict path containment checks on all file endpoints, and sanitize exception handlers.
 - **Rationale:** Protects user privacy and host system integrity across both server and desktop operating environments.
+
+## ADR-007: Provider Interface & Uniform Routing
+- **Date:** 2026-11-08
+- **Status:** Accepted
+- **Context:** Media ingestion was previously hardcoded solely to `yt_dlp`, preventing clean extraction of direct static video links and modular providers.
+- **Decision:** Establish `BaseProvider` and `ProviderRegistry`, routing all incoming URL analyses and downloads through priority-matched providers (`DirectHttpProvider` followed by `YtDlpProvider`).
+- **Rationale:** Separates source recognition from format discovery, enhances testability, and prevents tight coupling between high-level downloader controls and low-level extractor details.
+
+## ADR-008: Automated Architectural Fitness Functions
+- **Date:** 2026-11-08
+- **Status:** Accepted
+- **Context:** ARCH-02 audit identified the risk of gradual boundary decay where core media and security services could accidentally import server frameworks (FastAPI, Celery, Redis).
+- **Decision:** Implement automated AST-based architectural fitness tests in `tests/test_architecture_fitness.py` validating that core domain layers remain pure, `security.py` has zero internal cross-dependencies, and `protocol.py` remains purely declarative.
+- **Rationale:** Enforces architectural invariants continuously in automated CI without manual review bottlenecks or heavyweight external lint tooling.

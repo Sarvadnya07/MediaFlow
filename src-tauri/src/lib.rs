@@ -2,9 +2,9 @@ pub mod commands;
 pub mod sidecar;
 
 use commands::{
-    analyze_url, cancel_job, check_health, convert_media, get_capabilities, get_diagnostics,
-    queue_add, queue_list, queue_remove, queue_retry, reveal_file, start_download, verify_media,
-    AppSidecarState,
+    analyze_url, cancel_job, check_health, convert_media, enrich_media, get_capabilities,
+    get_diagnostics, list_library, list_providers, queue_add, queue_list, queue_remove,
+    queue_retry, reveal_file, start_download, verify_media, AppSidecarState,
 };
 use sidecar::SidecarManager;
 use std::sync::Arc;
@@ -33,6 +33,9 @@ pub fn run() {
             check_health,
             get_capabilities,
             get_diagnostics,
+            list_providers,
+            list_library,
+            enrich_media,
             analyze_url,
             start_download,
             cancel_job,

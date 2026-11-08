@@ -313,6 +313,84 @@ pub async fn get_diagnostics(
 }
 
 #[tauri::command]
+pub async fn list_providers(state: State<'_, AppSidecarState>) -> Result<Value, String> {
+    let mut manager = state.lock().await;
+    match manager
+        .send_request("providers_list", serde_json::json!({}))
+        .await
+    {
+        Ok(resp) => {
+            if resp.status == "success" {
+                Ok(resp.data.unwrap_or(serde_json::json!({})))
+            } else {
+                Err(format!("Error: {:?}", resp.error))
+            }
+        }
+        Err(e) => Err(format!("Sidecar communication error: {}", e)),
+    }
+}
+
+#[tauri::command]
+pub async fn list_library(
+    query: Option<String>,
+    media_type: Option<String>,
+    tag: Option<String>,
+    favorites_only: Option<bool>,
+    state: State<'_, AppSidecarState>,
+) -> Result<Value, String> {
+    let mut manager = state.lock().await;
+    match manager
+        .send_request(
+            "library_list",
+            serde_json::json!({
+                "query": query,
+                "media_type": media_type,
+                "tag": tag,
+                "favorites_only": favorites_only.unwrap_or(false),
+            }),
+        )
+        .await
+    {
+        Ok(resp) => {
+            if resp.status == "success" {
+                Ok(resp.data.unwrap_or(serde_json::json!({})))
+            } else {
+                Err(format!("Error: {:?}", resp.error))
+            }
+        }
+        Err(e) => Err(format!("Sidecar communication error: {}", e)),
+    }
+}
+
+#[tauri::command]
+pub async fn enrich_media(
+    title: String,
+    description: Option<String>,
+    state: State<'_, AppSidecarState>,
+) -> Result<Value, String> {
+    let mut manager = state.lock().await;
+    match manager
+        .send_request(
+            "intelligence_enrich",
+            serde_json::json!({
+                "title": title,
+                "description": description.unwrap_or_default(),
+            }),
+        )
+        .await
+    {
+        Ok(resp) => {
+            if resp.status == "success" {
+                Ok(resp.data.unwrap_or(serde_json::json!({})))
+            } else {
+                Err(format!("Error: {:?}", resp.error))
+            }
+        }
+        Err(e) => Err(format!("Sidecar communication error: {}", e)),
+    }
+}
+
+#[tauri::command]
 pub async fn cancel_job(
     job_id: String,
     state: State<'_, AppSidecarState>,

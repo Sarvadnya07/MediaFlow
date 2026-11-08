@@ -20,6 +20,10 @@ class IPCRequest(BaseModel):
         "verify",
         "convert",
         "get_capabilities",
+        "get_diagnostics",
+        "providers_list",
+        "library_list",
+        "intelligence_enrich",
         "shutdown",
     ]
     payload: Dict[str, Any] = Field(default_factory=dict)

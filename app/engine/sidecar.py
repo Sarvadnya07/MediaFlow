@@ -15,6 +15,9 @@ from app.engine.protocol import IPCRequest, IPCResponse, ProgressEvent
 from app.engine.queue_manager import DownloadQueueManager
 from app.services import yt_service, ffmpeg_service
 from app.services.diagnostics_service import DiagnosticsService
+from app.services.intelligence_service import media_intelligence
+from app.providers.registry import provider_registry
+from app.library.manager import media_library
 from app.services.yt_service import DownloadCancelledError
 from app.security import SecurityError
 from app.config import settings
@@ -135,7 +138,8 @@ class SidecarRunner:
                     "supported_actions": [
                         "initialize", "health_check", "analyze", "get_formats",
                         "download", "cancel", "queue_add", "queue_list", "queue_cancel",
-                        "queue_retry", "queue_remove", "verify", "convert", "get_capabilities", "get_diagnostics", "shutdown"
+                        "queue_retry", "queue_remove", "verify", "convert", "get_capabilities", "get_diagnostics",
+                        "providers_list", "library_list", "intelligence_enrich", "shutdown"
                     ],
                     "video_formats": ["mp4", "mkv", "webm"],
                     "audio_formats": ffmpeg_caps.get("supported_audio_formats", ["mp3", "m4a", "wav", "flac", "ogg", "aac", "opus"]),
@@ -154,7 +158,11 @@ class SidecarRunner:
                     return
 
                 allow_private = payload.get("allow_private", False)
-                analysis = yt_service.analyze_url(url, allow_private=allow_private)
+                provider = provider_registry.get_provider_for_url(url)
+                if provider:
+                    analysis = provider.analyze(url, allow_private=allow_private)
+                else:
+                    analysis = yt_service.analyze_url(url, allow_private=allow_private)
                 self.send_response(req_id, status="success", data=analysis.model_dump())
 
             elif action == "cancel":
@@ -276,6 +284,28 @@ class SidecarRunner:
                     ffmpeg_bin=ffmpeg_bin
                 )
                 self.send_response(req_id, status="success", data={"output_file": out_file})
+
+            elif action == "providers_list":
+                providers = provider_registry.list_providers()
+                self.send_response(req_id, status="success", data={"providers": [p.model_dump() for p in providers]})
+
+            elif action == "library_list":
+                query = payload.get("query")
+                media_type = payload.get("media_type")
+                tag = payload.get("tag")
+                favorites_only = payload.get("favorites_only", False)
+                items = media_library.search(query=query, media_type=media_type, tag=tag, favorites_only=favorites_only)
+                stats = media_library.get_storage_stats()
+                self.send_response(req_id, status="success", data={
+                    "items": [item.model_dump() for item in items],
+                    "stats": stats.model_dump(),
+                })
+
+            elif action == "intelligence_enrich":
+                title = payload.get("title", "")
+                description = payload.get("description", "")
+                enrichment = media_intelligence.enrich_metadata(title=title, description=description)
+                self.send_response(req_id, status="success", data=enrichment.model_dump())
 
             else:
                 self.send_response(req_id, status="error", error={"code": "UNKNOWN_ACTION", "message": f"Action '{action}' is not supported."})
