@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, timezone
 from .database import Base
 
 class User(Base):
@@ -11,7 +11,7 @@ class User(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     role = Column(String, default="user")
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     # One-to-many relationship with downloads
     downloads = relationship("Download", back_populates="owner")
@@ -33,7 +33,7 @@ class Download(Base):
     tags = Column(String, nullable=True)
     progress = Column(Integer, default=0)
     error_message = Column(String, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     user_id = Column(Integer, ForeignKey("users.id"))
 
     # Relationship to user
