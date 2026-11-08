@@ -1,6 +1,6 @@
 import React from 'react';
 import { Search, X, Clipboard, RefreshCw, AlertTriangle, DownloadCloud, Film, Music, Check, Play } from 'lucide-react';
-import { AnalysisData, FormatOption } from '../types';
+import type { AnalysisData, FormatOption } from '../types';
 
 interface HomeTabProps {
   darkMode: boolean;

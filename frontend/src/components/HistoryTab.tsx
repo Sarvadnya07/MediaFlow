@@ -1,6 +1,6 @@
 import React from 'react';
 import { History, Search, FolderOpen, Trash2 } from 'lucide-react';
-import { QueueItem } from '../types';
+import type { QueueItem } from '../types';
 
 interface HistoryTabProps {
   completedJobs: QueueItem[];

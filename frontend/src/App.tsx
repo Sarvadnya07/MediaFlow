@@ -16,7 +16,7 @@ import {
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 
-import { ViewMode, ToastMessage, HealthStatus, AnalysisData, QueueItem } from './types';
+import type { ViewMode, ToastMessage, HealthStatus, AnalysisData, QueueItem } from './types';
 import { HomeTab } from './components/HomeTab';
 import { QueueTab } from './components/QueueTab';
 import { LibraryTab } from './components/LibraryTab';
@@ -46,7 +46,7 @@ export function App() {
     if (saved) {
       try {
         return JSON.parse(saved);
-      } catch (e) {
+      } catch {
         // Fall back to defaults
       }
     }
@@ -63,7 +63,7 @@ export function App() {
     try {
       localStorage.setItem('mediadock_settings', JSON.stringify(settingsForm));
       addToast('Settings saved successfully', 'success');
-    } catch (e) {
+    } catch {
       addToast('Failed to save settings', 'error');
     }
   };
@@ -80,6 +80,39 @@ export function App() {
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
     }, 4000);
+  };
+
+  const checkSystemHealth = async () => {
+    try {
+      const res = await invoke<HealthStatus>('check_health');
+      setHealth(res);
+    } catch (e: any) {
+      console.error('Health check failed:', e);
+      setHealth({
+        status: 'degraded',
+        dependencies: { ffmpeg: false, yt_dlp: true },
+      });
+    }
+  };
+
+  const fetchCapabilities = async () => {
+    try {
+      const caps = await invoke('get_capabilities');
+      setCapabilities(caps);
+    } catch {
+      console.error('Failed to query capabilities');
+    }
+  };
+
+  const fetchQueueItems = async () => {
+    try {
+      const res: any = await invoke('queue_list');
+      if (res && res.jobs) {
+        setQueueItems(res.jobs);
+      }
+    } catch {
+      console.error('Failed to fetch queue list');
+    }
   };
 
   useEffect(() => {
@@ -127,39 +160,6 @@ export function App() {
       unlistenPromise.then((unlisten) => unlisten());
     };
   }, []);
-
-  const checkSystemHealth = async () => {
-    try {
-      const res = await invoke<HealthStatus>('check_health');
-      setHealth(res);
-    } catch (e: any) {
-      console.error('Health check failed:', e);
-      setHealth({
-        status: 'degraded',
-        dependencies: { ffmpeg: false, yt_dlp: true },
-      });
-    }
-  };
-
-  const fetchCapabilities = async () => {
-    try {
-      const caps = await invoke('get_capabilities');
-      setCapabilities(caps);
-    } catch (e) {
-      console.error('Failed to query capabilities:', e);
-    }
-  };
-
-  const fetchQueueItems = async () => {
-    try {
-      const res: any = await invoke('queue_list');
-      if (res && res.jobs) {
-        setQueueItems(res.jobs);
-      }
-    } catch (e) {
-      console.error('Failed to fetch queue list:', e);
-    }
-  };
 
   const handlePasteClipboard = async () => {
     try {

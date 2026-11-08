@@ -1,6 +1,6 @@
 import React from 'react';
 import { Film, FolderOpen, Trash2 } from 'lucide-react';
-import { QueueItem } from '../types';
+import type { QueueItem } from '../types';
 
 interface LibraryTabProps {
   completedJobs: QueueItem[];

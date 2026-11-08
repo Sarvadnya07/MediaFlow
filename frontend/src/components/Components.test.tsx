@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { QueueTab } from './QueueTab';
 import { DiagnosticsTab } from './DiagnosticsTab';
-import { QueueItem, HealthStatus } from '../types';
+import type { QueueItem, HealthStatus } from '../types';
 
 describe('Frontend Modular Components', () => {
   it('renders QueueTab empty state and populated state', () => {

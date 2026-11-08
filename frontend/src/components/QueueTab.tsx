@@ -1,6 +1,6 @@
 import React from 'react';
 import { RefreshCw, ListOrdered, Play, RotateCcw, Trash2, FolderOpen } from 'lucide-react';
-import { QueueItem } from '../types';
+import type { QueueItem } from '../types';
 
 interface QueueTabProps {
   queueItems: QueueItem[];

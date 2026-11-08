@@ -1,6 +1,6 @@
 import React from 'react';
 import { Cpu, HardDrive, ShieldCheck } from 'lucide-react';
-import { HealthStatus, QueueItem } from '../types';
+import type { HealthStatus, QueueItem } from '../types';
 
 interface DiagnosticsTabProps {
   darkMode: boolean;
